@@ -10,9 +10,8 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import UserDashboard from "./pages/User/UserDashboard.jsx";
 import MyTasks from "./pages/User/MyTasks.jsx";
 import ViewTaskDetails from "./pages/User/ViewTaskDetails.jsx";
- 
-import PrivateRoute from "./routes/PrivateRoute.jsx";
 
+import PrivateRoute from "./routes/PrivateRoute.jsx";
 
 const App = () => {
   return (

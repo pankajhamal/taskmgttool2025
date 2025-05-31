@@ -78,7 +78,7 @@ const Signup = () => {
                     to={"/login"}
                     className="text-blue-800 hover:underline text-xl"
                   >
-                   Login
+                    Login
                   </NavLink>
                 </div>
               </form>

@@ -3,7 +3,7 @@ import { useState } from "react";
 import { IoEye } from "react-icons/io5";
 import { IoEyeOff } from "react-icons/io5";
 
-export function Password(){
+export function Password() {
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
 
   const togglePasswordVisibility = () => {
@@ -42,5 +42,4 @@ export function Password(){
       </div>
     </div>
   );
-};
-
+}
