@@ -3,14 +3,36 @@ import { useState } from "react";
 import { FaTasks } from "react-icons/fa";
 import { NavLink } from "react-router-dom";
 import OrganizeImage from "../../assets/images/OrganizeImage.png";
+import { IoEye } from "react-icons/io5";
+import { IoEyeOff } from "react-icons/io5";
+import { Password } from "./Password.jsx"
+
 
 const Login = () => {
+  // For password eyeoff and eyeon
+  // const [password, setPassword] = useState("");
+  // const [type, setType] = useState('password');
+  // const [icon, setIcon] = useState(eyeOff);
+
+  // const handleToggle = () =>{
+  //   if(type === 'password'){
+  //     setIcon(eye);
+  //     setType('password')
+  //   } else {
+  //     setIcon(eyeOff);
+  //     setType('text');
+  //   }
+  // }
+
+
+
+
   return (
-    <div className="w-screen min-h-screen flex justify-center items-center bg-purple-500">
-      <div className=" w-300 h-200 flex justify-center items-center">
+    <div className="w-screen min-h-screen flex justify-center items-center bg-blue-50">
+      <div className=" w-300 h-200 flex justify-center items-center shadow-xl/30 rounded-2xl">
         {/* For login form  */}
 
-        <div className="w-full h-200   bg-white p-4 flex rounded-xl">
+        <div className="w-full h-200   bg-white p-4 flex rounded-2xl">
           <div className="w-full p-5">
             <div className="flex m-0.5 w-2xs h-3xs">
               <FaTasks className="size-8 mt-[3px] mr-2 text-blue-600" />
@@ -38,17 +60,9 @@ const Login = () => {
                 </div>
 
                 {/* Password field  */}
-                <div className="mt-4">
-                  <label className="text-2xl block" htmlFor="password">
-                    Password :{" "}
-                  </label>
-                  <input
-                    type="password"
-                    id="password"
-                    placeholder="Enter the password"
-                    className="border-2 border-solid outline-0 border-blue-400 rounded-xl w-110 h-14 p-2"
-                  />
-                </div>
+                
+                <Password />
+                
                 <button className="w-100 h-15 bg-blue-600 text-white text-xl mt-8 rounded-2xl">
                   Login
                 </button>
@@ -58,7 +72,7 @@ const Login = () => {
                     Don't have an account?{" "}
                   </p>
                   <NavLink
-                    to={"/signup"}
+                    to={"/signUp"}
                     className="text-blue-800 hover:underline text-xl"
                   >
                     SignUp
