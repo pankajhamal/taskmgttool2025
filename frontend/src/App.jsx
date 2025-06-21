@@ -12,6 +12,7 @@ import MyTasks from "./pages/User/MyTasks.jsx";
 import ViewTaskDetails from "./pages/User/ViewTaskDetails.jsx";
 
 import PrivateRoute from "./routes/PrivateRoute.jsx";
+import DashboardLayout from "./components/Layouts/DashboardLayout.jsx";
 
 const App = () => {
   return (
@@ -23,10 +24,13 @@ const App = () => {
 
           {/* Admin Routes */}
           <Route element={<PrivateRoute allowedRoles={["admin"]} />}>
-            <Route path="/admin/dashboard" element={<Dashboard />}></Route>
-            <Route path="/admin/tasks" element={<ManageTasks />}></Route>
-            <Route path="/admin/create-task" element={<CreateTask />}></Route>
-            <Route path="/admin/users" element={<ManageUsers />}></Route>
+            <Route path="/admin" element={<Dashboard />}>
+              <Route path="/admin/dashboard" element={<DashboardLayout />}></Route>
+              <Route path="/admin/tasks" element={<ManageTasks />}></Route>
+              <Route path="/admin/create-task" element={<CreateTask />}></Route>
+              <Route path="/admin/users" element={<ManageUsers />}></Route>
+            </Route>
+            
           </Route>
 
           {/* User Routes */}
