@@ -13,7 +13,7 @@ const Dashboard = () => {
       <Navbar />
       <div className="flex flex-1 min-w-screen">
         <Sidebar />
-        <div className="w-full bg-white m-3 p-2 rounded-2xl shadow-xl ">
+        <div className="w-full  m-3 p-2 bg-gray-100 rounded-2xl shadow-2xl">
          <Outlet />
         </div>
       </div>
