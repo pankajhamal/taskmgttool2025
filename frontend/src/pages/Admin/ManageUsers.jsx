@@ -54,7 +54,7 @@ export default function App() {
       id: 4,
       initials: "PR",
       name: "Piyus Rawal",
-      role: "UI/UX Designer",
+      role: "Backend Developer",
       email: "piyus@.com",
       joinedDate: "Joined 12/1/2023",
       bgColor: "bg-purple-500",
@@ -233,7 +233,7 @@ export default function App() {
                 <input
                   type="text"
                   name="name"
-                  placeholder="e.g., Jane Doe"
+                  placeholder="e.g. Pankaj hamal"
                   value={formData.name}
                   onChange={handleInputChange}
                   className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
@@ -247,7 +247,7 @@ export default function App() {
                 <input
                   type="email"
                   name="email"
-                  placeholder="e.g., jane@example.com"
+                  placeholder="e.g. pankaj@gmail.com"
                   value={formData.email}
                   onChange={handleInputChange}
                   className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
@@ -261,7 +261,7 @@ export default function App() {
                 <input
                   type="text"
                   name="role"
-                  placeholder="e.g., Project Manager"
+                  placeholder="e.g. Project Manager"
                   value={formData.role}
                   onChange={handleInputChange}
                   className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
