@@ -5,28 +5,9 @@ import { NavLink } from "react-router-dom";
 import OrganizeImage from "../../assets/images/OrganizeImage.png";
 import { IoEye } from "react-icons/io5";
 import { IoEyeOff } from "react-icons/io5";
-import { Password } from "./Password.jsx"
-
+import { Password } from "./Password.jsx";
 
 const Login = () => {
-  // For password eyeoff and eyeon
-  // const [password, setPassword] = useState("");
-  // const [type, setType] = useState('password');
-  // const [icon, setIcon] = useState(eyeOff);
-
-  // const handleToggle = () =>{
-  //   if(type === 'password'){
-  //     setIcon(eye);
-  //     setType('password')
-  //   } else {
-  //     setIcon(eyeOff);
-  //     setType('text');
-  //   }
-  // }
-
-
-
-
   return (
     <div className="w-screen min-h-screen flex justify-center items-center bg-blue-50">
       <div className=" w-300 h-200 flex justify-center items-center shadow-xl/30 rounded-2xl">
@@ -60,9 +41,9 @@ const Login = () => {
                 </div>
 
                 {/* Password field  */}
-                
+
                 <Password />
-                
+
                 <button className="w-100 h-15 bg-blue-600 text-white text-xl mt-8 rounded-2xl">
                   Login
                 </button>
