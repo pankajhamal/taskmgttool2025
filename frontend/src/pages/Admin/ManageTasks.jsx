@@ -34,12 +34,60 @@ const initialTasks = [
     dueDate: "2025-07-01",
     totalSubtasks: 3,
     completedSubtasks: 3,
-    assignedTo: "Piyus Rawal",
+    assignedTo: "Kshitiz Rawal",
     completed: true,
     priority: "Medium",
   },
   {
     id: 2,
+    title: "API Integration",
+    description: "Connect frontend to Flask backend.",
+    startDate: "2025-06-20",
+    dueDate: "2025-07-01",
+    totalSubtasks: 3,
+    completedSubtasks: 3,
+    assignedTo: "Kshitiz Rawal",
+    completed: true,
+    priority: "Medium",
+  },
+  {
+    id: 2,
+    title: "API Integration",
+    description: "Connect frontend to Flask backend.",
+    startDate: "2025-06-20",
+    dueDate: "2025-07-01",
+    totalSubtasks: 3,
+    completedSubtasks: 3,
+    assignedTo: "Kshitiz Rawal",
+    completed: true,
+    priority: "Medium",
+  },
+  {
+    id: 3,
+    title: "API Integration",
+    description: "Connect frontend to Flask backend.",
+    startDate: "2025-06-20",
+    dueDate: "2025-07-01",
+    totalSubtasks: 3,
+    completedSubtasks: 3,
+    assignedTo: "Piyus Rawal",
+    completed: true,
+    priority: "Medium",
+  },
+  {
+    id: 4,
+    title: "API Integration",
+    description: "Connect frontend to Flask backend.",
+    startDate: "2025-06-20",
+    dueDate: "2025-07-01",
+    totalSubtasks: 3,
+    completedSubtasks: 3,
+    assignedTo: "Diya Bogati",
+    completed: true,
+    priority: "Medium",
+  },
+  {
+    id: 5,
     title: "API Integration",
     description: "Connect frontend to Flask backend.",
     startDate: "2025-06-20",
@@ -71,7 +119,7 @@ const ManageTasks = () => {
   };
 
   return (
-    <div className="flex flex-col p-5 gap-5 bg-gray-100 min-h-full">
+    <div className="flex flex-col p-5 gap-5 bg-gray-100 h-190 overflow-auto">
       <div>
         <h1 className="text-2xl font-bold">Manage Task</h1>
       </div>
@@ -121,7 +169,11 @@ const ManageTasks = () => {
       {/* Task Cards */}
       <div className="mt-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {getFilteredTasks().map((task) => (
-          <TaskCard key={task.id} task={task} onStatusToggle={handleStatusToggle} />
+          <TaskCard
+            key={task.id}
+            task={task}
+            onStatusToggle={handleStatusToggle}
+          />
         ))}
       </div>
     </div>

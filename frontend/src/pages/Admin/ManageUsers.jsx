@@ -132,7 +132,7 @@ export default function App() {
   };
 
   return (
-    <div className="h-[700px] bg-gray-100 p-6 font-sans ">
+    <div className="h-160 bg-gray-100 p-6 font-sans ">
       <div className="max-w-4xl">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8">
           <div>
