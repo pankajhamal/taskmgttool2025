@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import TaskCard from "../../components/TaskCard";
 
+
+//later update from database
 const initialTasks = [
   {
     id: 1,
@@ -26,42 +28,7 @@ const initialTasks = [
     completed: true,
     priority: "Medium",
   },
-  {
-    id: 2,
-    title: "API Integration",
-    description: "Connect frontend to Flask backend.",
-    startDate: "2025-06-20",
-    dueDate: "2025-07-01",
-    totalSubtasks: 3,
-    completedSubtasks: 3,
-    assignedTo: "Kshitiz Rawal",
-    completed: true,
-    priority: "Medium",
-  },
-  {
-    id: 2,
-    title: "API Integration",
-    description: "Connect frontend to Flask backend.",
-    startDate: "2025-06-20",
-    dueDate: "2025-07-01",
-    totalSubtasks: 3,
-    completedSubtasks: 3,
-    assignedTo: "Kshitiz Rawal",
-    completed: true,
-    priority: "Medium",
-  },
-  {
-    id: 2,
-    title: "API Integration",
-    description: "Connect frontend to Flask backend.",
-    startDate: "2025-06-20",
-    dueDate: "2025-07-01",
-    totalSubtasks: 3,
-    completedSubtasks: 3,
-    assignedTo: "Kshitiz Rawal",
-    completed: true,
-    priority: "Medium",
-  },
+
   {
     id: 3,
     title: "API Integration",
@@ -70,7 +37,7 @@ const initialTasks = [
     dueDate: "2025-07-01",
     totalSubtasks: 3,
     completedSubtasks: 3,
-    assignedTo: "Piyus Rawal",
+    assignedTo: "Kshitiz Rawal",
     completed: true,
     priority: "Medium",
   },
@@ -82,22 +49,36 @@ const initialTasks = [
     dueDate: "2025-07-01",
     totalSubtasks: 3,
     completedSubtasks: 3,
-    assignedTo: "Diya Bogati",
+    assignedTo: "Kshitiz Rawal",
     completed: true,
     priority: "Medium",
   },
-  {
+   {
     id: 5,
-    title: "API Integration",
-    description: "Connect frontend to Flask backend.",
-    startDate: "2025-06-20",
-    dueDate: "2025-07-01",
-    totalSubtasks: 3,
-    completedSubtasks: 3,
-    assignedTo: "Diya Bogati",
-    completed: true,
-    priority: "Medium",
+    title: "Design Website",
+    description: "Design a responsive marketing website for product launch.",
+    startDate: "2025-06-25",
+    dueDate: "2025-07-05",
+    totalSubtasks: 5,
+    completedSubtasks: 2,
+    assignedTo: "Pankaj Hamal",
+    completed: false,
+    priority: "High",
   },
+   {
+    id: 6,
+    title: "Design Website",
+    description: "Design a responsive marketing website for product launch.",
+    startDate: "2025-06-25",
+    dueDate: "2025-07-05",
+    totalSubtasks: 5,
+    completedSubtasks: 2,
+    assignedTo: "Pankaj Hamal",
+    completed: false,
+    priority: "High",
+  },
+  
+
 ];
 
 const ManageTasks = () => {
@@ -172,7 +153,6 @@ const ManageTasks = () => {
           <TaskCard
             key={task.id}
             task={task}
-            onStatusToggle={handleStatusToggle}
           />
         ))}
       </div>

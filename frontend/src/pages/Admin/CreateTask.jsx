@@ -180,44 +180,7 @@ const CreateTask = () => {
             />
           </div>
         </div>
-        <div className="max-h-64 overflow-y-auto pr-3 border border-gray-200 rounded-md p-4">
-          <h2 className="text-gray-700 text-lg mb-2">TODO Checklist</h2>
-          <div className="flex gap-4 mb-3">
-            <input
-              className="outline-none border-2 border-gray-300 rounded-md w-full pl-3 h-10 focus:border-blue-500 transition-colors"
-              type="text"
-              value={newItem}
-              onChange={(e) => setNewItem(e.target.value)}
-              placeholder="Enter checklist item"
-            />
-            <button
-              onClick={handleAddChecklistItem}
-              className="flex gap-2 justify-center items-center outline-none bg-blue-500 text-white w-24 rounded-md hover:bg-blue-600 transition-colors"
-            >
-              <Plus />
-              Add
-            </button>
-          </div>
-          <div>
-            <ul className="mt-4 space-y-2">
-              {checkList.map((item, index) => (
-                <li
-                  key={index}
-                  className="flex justify-between items-center bg-gray-50 p-2 rounded-md border border-gray-100"
-                >
-                  <span className="text-gray-700">{item}</span>
-                  <button
-                    type="button"
-                    onClick={() => handleDeleteChecklistItem(index)}
-                    className="text-red-500 hover:text-red-700 transition-colors"
-                  >
-                    <Trash2 />
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </div>
+        
         <button className="w-full bg-indigo-600 h-12 text-white rounded-md font-semibold text-lg hover:bg-indigo-700 transition-colors shadow-md">
           Create Task
         </button>
