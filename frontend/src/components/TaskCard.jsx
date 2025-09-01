@@ -25,11 +25,9 @@ const availableMembers = [
   { id: "m5", name: "Eve Adams" },
 ];
 
-const TaskCard = ({ task}) => {
- 
+const TaskCard = ({ task }) => {
   const [isMemberModalOpen, setIsMemberModalOpen] = useState(false);
   const [assignedMembers, setAssignedMembers] = useState([]);
-
 
   const handleOpenMemberModal = () => {
     setIsMemberModalOpen(true);
@@ -40,13 +38,15 @@ const TaskCard = ({ task}) => {
   };
 
   const handleAssignMember = (memberToToggle) => {
-    setAssignedMembers(prevMembers => {
+    setAssignedMembers((prevMembers) => {
       // Check if the member is already assigned
-      const isAssigned = prevMembers.some(member => member.id === memberToToggle.id);
+      const isAssigned = prevMembers.some(
+        (member) => member.id === memberToToggle.id
+      );
 
       if (isAssigned) {
         // Remove member if already assigned
-        return prevMembers.filter(member => member.id !== memberToToggle.id);
+        return prevMembers.filter((member) => member.id !== memberToToggle.id);
       } else {
         // Add member if not assigned
         return [...prevMembers, memberToToggle];
@@ -55,10 +55,12 @@ const TaskCard = ({ task}) => {
   };
 
   const handleRemoveAssignedMember = (memberId) => {
-    setAssignedMembers(prevMembers => prevMembers.filter(member => member.id !== memberId));
+    setAssignedMembers((prevMembers) =>
+      prevMembers.filter((member) => member.id !== memberId)
+    );
   };
 
-  //Show the  editing Task card 
+  //Show the  editing Task card
   const [editingTask, setEditingTask] = useState(false);
 
   // MemberSelectionModal Component
@@ -161,15 +163,14 @@ const TaskCard = ({ task}) => {
         </button>
       </div>
 
- {/* For editing the task card component or for looking the details */}
+      {/* For editing the task card component or for looking the details */}
+      {/* This section can be restricted for admin role only  */}
       {editingTask && (
         <div className="fixed inset-0 backdrop-blur-xs bg-opacity-40 flex items-center justify-center z-50 p-4">
           <div
             onClick={() => e.stopPropagation}
             className="bg-white rounded-lg shadow-xl relative w-full max-w-md p-6"
           >
-            
-
             <form
               onSubmit={(e) => e.preventDefault()}
               className="flex flex-col gap-6"
@@ -178,21 +179,20 @@ const TaskCard = ({ task}) => {
               {/* Prevent default form submission */}
               <div className="flex items-center justify-between">
                 <h1 className="font-semibold text-2xl text-gray-800">
-                Create Task
-              </h1>
+                  Create Task
+                </h1>
                 <button
-                className="cursor-pointer"
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation(); //block event bubbling
-                console.log("Closing...");
-                setEditingTask(false);
-              }}
-            >
-              <X size={24} />
-            </button>
+                  className="cursor-pointer"
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation(); //block event bubbling
+                    console.log("Closing...");
+                    setEditingTask(false);
+                  }}
+                >
+                  <X size={24} />
+                </button>
               </div>
-              
               <div>
                 <h2 className="text-gray-700 text-lg mb-1">Task Title</h2>
                 <input
@@ -240,7 +240,6 @@ const TaskCard = ({ task}) => {
                         {assignedMembers.map((member) => (
                           <span
                             key={member.id}
-                         
                             className="flex items-center bg-blue-100 text-blue-800 text-sm px-3 py-1 rounded-full"
                           >
                             {member.name}
@@ -270,9 +269,12 @@ const TaskCard = ({ task}) => {
                   />
                 </div>
               </div>
-              <button className="w-full bg-indigo-600 h-12 text-white rounded-md font-semibold text-lg hover:bg-indigo-700 transition-colors shadow-md">
-                Save Changes
-              </button>
+              <div className="flex items-center justify-around gap-2">
+                <button  className="w-full  bg-red-600 h-12 text-white rounded-md font-semibold text-lg hover:bg-red-700 transition-colors shadow-md">Delete</button>
+                <button className="w-full bg-indigo-600 h-12 text-white rounded-md font-semibold text-lg hover:bg-indigo-700 transition-colors shadow-md">
+                  Save Changes
+                </button>
+              </div>
             </form>
             <MemberSelectionModal
               isOpen={isMemberModalOpen}
