@@ -1,7 +1,8 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Mail, Calendar, Pencil, Trash2, Plus, X } from "lucide-react";
+import { fetchUsers, addUser, updateUser, deleteUser } from "../../api";
 
-
+// Generate avatar initials and background color
 const generateAvatarProps = (username) => {
   const initials = username
     .split(" ")
@@ -22,122 +23,101 @@ const generateAvatarProps = (username) => {
   return { initials, bgColor };
 };
 
-export default function App() {
-  const [teamMembers, setTeamMembers] = useState([
-    {
-      id: 1,
-      initials: "PH",
-      username: "Pankaj Hamal",
-      role: "Frontend Developer",
-      password: "pankaj@gmail.com",
-      joinedDate: "Joined 12/1/2023",
-      bgColor: "bg-indigo-500",
-    },
-    {
-      id: 2,
-      initials: "KR",
-      username: "Kshitiz Rawal",
-      role: "Project Manager",
-      password: "kshitiz@gmail.com",
-      joinedDate: "Joined 12/1/2023",
-      bgColor: "bg-green-500",
-    },
-    {
-      id: 3,
-      initials: "DB",
-      username: "Diya Bogati",
-      role: "UI/UX Designer",
-      password: "diya@gmail.com",
-      joinedDate: "Joined 12/1/2023",
-      bgColor: "bg-purple-500",
-    },
-    {
-      id: 4,
-      initials: "PR",
-      username: "Piyus Rawal",
-      role: "Backend Developer",
-      password: "piyus@.com",
-      joinedDate: "Joined 12/1/2023",
-      bgColor: "bg-orange-500",
-    },
-  ]);
-
+export default function ManageUsers() {
+  const [teamMembers, setTeamMembers] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [formData, setFormData] = useState({
     id: null,
     username: "",
+    email: "",
     password: "",
     role: "user",
   });
   const [editingMember, setEditingMember] = useState(null);
 
-  // Fixed handleInputChange
+  // Load users from backend
+  const loadUsers = async () => {
+    try {
+      const res = await fetchUsers();
+      const users = res.data.map((u) => ({
+        id: u.id,
+        username: u.username,
+        email: u.email,
+        role: u.role,
+        password: "••••••••",
+        joinedDate: `Joined ${new Date(u.created_at).toLocaleDateString()}`,
+        ...generateAvatarProps(u.username),
+      }));
+      setTeamMembers(users);
+    } catch (err) {
+      console.error(err);
+      alert("Failed to fetch users from backend.");
+    }
+  };
+
+  useEffect(() => {
+    loadUsers();
+  }, []);
+
   const handleInputChange = (e) => {
     setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
   const handleSubmit = async (e) => {
-  e.preventDefault();
+    e.preventDefault();
 
-  if (!formData.username || !formData.password || !formData.role) {
-    alert("Please fill in all fields.");
-    return;
-  }
-
-  try {
-    const res = await addUser(formData); // send data to Flask
-    if (res.error) {
-      alert(res.error);
-    } else {
-      alert(res.message); // "User added successfully!"
-
-      // Update frontend state
-      const today = new Date();
-      const joinedDate = `Joined ${today.toLocaleDateString("en-US")}`;
-      const { initials, bgColor } = generateAvatarProps(formData.username);
-      const newMember = {
-        id: Date.now(),
-        ...formData,
-        initials,
-        bgColor,
-        joinedDate,
-      };
-      setTeamMembers((prev) => [...prev, newMember]);
-
-      // Reset form
-      setFormData({ id: null, username: "", password: "", role: "user" });
-      setShowForm(false);
+    if (!formData.username || !formData.password || !formData.role || !formData.email) {
+      alert("Please fill all fields.");
+      return;
     }
-  } catch (err) {
-    alert("Failed to add user. Check the backend server.");
-    console.error(err);
-  }
-};
 
+    try {
+      if (editingMember) {
+        await updateUser(formData.id, formData);
+        alert("User updated successfully!");
+      } else {
+        await addUser(formData);
+        alert("User added successfully!");
+      }
 
-  const handleEditClick = (memberToEdit) => {
-    setEditingMember(memberToEdit);
+      setShowForm(false);
+      setEditingMember(null);
+      setFormData({ id: null, username: "", email: "", password: "", role: "user" });
+      loadUsers();
+    } catch (err) {
+      console.error(err);
+      alert("Operation failed. Check backend.");
+    }
+  };
+
+  const handleEditClick = (member) => {
+    setEditingMember(member);
     setFormData({
-      id: memberToEdit.id,
-      username: memberToEdit.username,
-      password: memberToEdit.password,
-      role: memberToEdit.role,
+      id: member.id,
+      username: member.username,
+      email: member.email,
+      password: "", // leave empty so admin can reset
+      role: member.role,
     });
     setShowForm(true);
   };
 
-  const handleDeleteClick = (idToDelete) => {
+  const handleDeleteClick = async (id) => {
     if (window.confirm("Are you sure you want to delete this member?")) {
-      setTeamMembers((prev) =>
-        prev.filter((member) => member.id !== idToDelete)
-      );
+      try {
+        await deleteUser(id);
+        loadUsers();
+      } catch (err) {
+        console.error(err);
+        alert("Delete failed.");
+      }
     }
   };
 
   const handleCloseForm = () => {
     setShowForm(false);
     setEditingMember(null);
-    setFormData({ id: null, username: "", password: "", role: "user" });
+    setFormData({ id: null, username: "", email: "", password: "", role: "user" });
   };
 
   return (
@@ -153,7 +133,7 @@ export default function App() {
           <button
             onClick={() => {
               setEditingMember(null);
-              setFormData({ id: null, username: "", password: "", role: "user" });
+              setFormData({ id: null, username: "", email: "", password: "", role: "user" });
               setShowForm(true);
             }}
             className="flex items-center px-5 py-2 bg-blue-600 text-white rounded-lg shadow-md hover:bg-blue-700 transition duration-200 mt-4 sm:mt-0"
@@ -162,12 +142,12 @@ export default function App() {
           </button>
         </div>
 
-        <div className=" flex flex-col gap-4 overflow-y-auto max-h-[70vh] pr-2">
+        <div className="flex flex-col gap-4 overflow-y-auto max-h-[70vh] pr-2">
           {teamMembers.length > 0 ? (
             teamMembers.map((member) => (
               <div
                 key={member.id}
-                className=" bg-white rounded-lg shadow-md p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center border border-gray-200 hover:shadow-lg transition "
+                className="bg-white rounded-lg shadow-md p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center border border-gray-200 hover:shadow-lg transition "
               >
                 <div className="flex items-center mb-4 sm:mb-0 sm:mr-6 w-full sm:w-auto">
                   <div
@@ -188,7 +168,7 @@ export default function App() {
                 <div className="space-y-3 sm:space-y-0 sm:space-x-6 flex flex-col sm:flex-row items-start sm:items-center text-gray-600 text-sm flex-grow sm:flex-grow-0">
                   <div className="flex items-center">
                     <Mail size={16} className="mr-2 text-gray-500" />
-                    <span>{member.password}</span>
+                    <span>{member.email}</span>
                   </div>
                   <div className="flex items-center">
                     <Calendar size={16} className="mr-2 text-gray-500" />
@@ -220,7 +200,7 @@ export default function App() {
         </div>
       </div>
 
-      {/* Add form */}
+      {/* Add/Edit Form */}
       {showForm && (
         <div className="fixed inset-0 backdrop-blur-xs bg-opacity-40 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg shadow-xl relative w-full max-w-md p-6">
@@ -252,6 +232,21 @@ export default function App() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Email
+                </label>
+                <input
+                  type="email"
+                  name="email"
+                  placeholder="e.g. email@example.com"
+                  value={formData.email}
+                  onChange={handleInputChange}
+                  className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
                   Password
                 </label>
                 <input
@@ -260,7 +255,8 @@ export default function App() {
                   value={formData.password}
                   onChange={handleInputChange}
                   className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                  required
+                  required={!editingMember} // required only for new user
+                  placeholder={editingMember ? "Leave blank to keep current password" : ""}
                 />
               </div>
 

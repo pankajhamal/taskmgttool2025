@@ -22,7 +22,9 @@ class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True, nullable=False)
     password = db.Column(db.String(120), nullable=False)
+    email = db.Column(db.String(120), unique=True, nullable=False)  # <-- Add this line
     role = db.Column(db.String(10), nullable=False, default='admin')
+
 
 # Create DB
 with app.app_context():
@@ -35,17 +37,24 @@ def signup():
     email = data.get('email')
     password = data.get('password')
 
+    if not username or not password or not email:
+        return jsonify({'error': 'Username, password, and email are required'}), 400
+
     if User.query.filter_by(username=username).first():
-        return jsonify({"message": "User already exists"}), 409
+        return jsonify({"error": "Username already exists"}), 409
+
+    if User.query.filter_by(email=email).first():
+        return jsonify({"error": "Email already exists"}), 409  # ✅ check email
 
     hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
-    new_user = User(username=username, password=hashed_password, role='admin')
 
+    new_user = User(username=username, password=hashed_password, email=email, role='admin')
     
     db.session.add(new_user)
     db.session.commit()
 
     return jsonify({"message": "User created successfully"}), 201
+
 
 @app.route('/login', methods=['POST'])
 def login():
@@ -75,54 +84,3 @@ def protected():
     user = User.query.get(current_user_id)
     return jsonify({"message": f"Hello {user.username}, this is a protected route"})
 
-
-
-###### CRUD FUNCTIONALITY FOR USER MANAGEMENT ######
-
-# Get all users (admin only)
-@app.route('/admin/users', methods=['GET'])
-@jwt_required()
-def get_users():
-    current_user_id = get_jwt_identity()
-    current_user = User.query.get(current_user_id)
-    if current_user.role != "admin":
-        return jsonify({'error': 'Unauthorized'}), 403
-    users = User.query.all()
-    users_list = [{'id': u.id, 'username': u.username, 'role': u.role, 'email': u.email} for u in users]
-    return jsonify(users_list), 200
-
-# Add new user
-@app.route('/admin/users', methods=['POST'])
-@jwt_required()
-def add_user():
-    current_user_id = get_jwt_identity()
-    current_user = User.query.get(current_user_id)
-    if current_user.role != "admin":
-        return jsonify({'error': 'Unauthorized'}), 403
-
-    data = request.get_json()
-    username = data.get('username')
-    password = data.get('password')
-    role = data.get('role', 'user')
-
-    if User.query.filter_by(username=username).first():
-        return jsonify({'error': 'Username already exists'}), 409
-
-    hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
-    new_user = User(username=username, password=hashed_password, role=role)
-    db.session.add(new_user)
-    db.session.commit()
-    return jsonify({'message': 'User created successfully'}), 201
-
-# Delete user
-@app.route('/admin/users/<int:user_id>', methods=['DELETE'])
-@jwt_required()
-def delete_user(user_id):
-    current_user_id = get_jwt_identity()
-    current_user = User.query.get(current_user_id)
-    if current_user.role != "admin":
-        return jsonify({'error': 'Unauthorized'}), 403
-    user = User.query.get_or_404(user_id)
-    db.session.delete(user)
-    db.session.commit()
-    return jsonify({'message': 'User deleted'}), 200
