@@ -62,8 +62,11 @@ def login():
 
     # Create JWT token
     access_token = create_access_token(identity={'id': user.id, 'username': user.username, 'role': user.role})
-    return jsonify({'message': 'Login successful', 'access_token': access_token}), 200
-
+    return jsonify({
+        "message": "Login successful",
+        "access_token": access_token,
+        "role": user.role  # <--- include this
+    }), 200
 
 @app.route('/protected', methods=['GET'])
 @jwt_required()

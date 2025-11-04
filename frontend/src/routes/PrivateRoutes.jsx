@@ -1,22 +1,23 @@
-// src/components/ProtectedRoute.jsx
+// src/components/PrivateRoute.jsx
 import React from "react";
 import { Navigate } from "react-router-dom";
 
-const ProtectedRoute = ({ children, allowedRoles }) => {
+const PrivateRoute = ({ children, allowedRoles }) => {
   const token = localStorage.getItem("token");
   const role = localStorage.getItem("role");
 
+  // If not logged in, redirect to login
   if (!token) {
-    // Not logged in
     return <Navigate to="/login" replace />;
   }
 
+  // If logged in but role is not allowed, redirect to unauthorized
   if (allowedRoles && !allowedRoles.includes(role)) {
-    // Logged in but role not allowed
     return <Navigate to="/unauthorized" replace />;
   }
 
-  return children; // User is allowed
+  // User is allowed
+  return children;
 };
 
-export default ProtectedRoute;
+export default PrivateRoute;
