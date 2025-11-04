@@ -1,8 +1,9 @@
 import React, { useState } from "react";
 import { Mail, Calendar, Pencil, Trash2, Plus, X } from "lucide-react";
 
-const generateAvatarProps = (name) => {
-  const initials = name
+
+const generateAvatarProps = (username) => {
+  const initials = username
     .split(" ")
     .map((n) => n[0])
     .join("")
@@ -26,72 +27,74 @@ export default function App() {
     {
       id: 1,
       initials: "PH",
-      name: "Pankaj Hamal",
+      username: "Pankaj Hamal",
       role: "Frontend Developer",
-      email: "pankaj@gmail.com",
+      password: "pankaj@gmail.com",
       joinedDate: "Joined 12/1/2023",
       bgColor: "bg-indigo-500",
     },
     {
       id: 2,
       initials: "KR",
-      name: "Kshitiz Rawal",
+      username: "Kshitiz Rawal",
       role: "Project Manager",
-      email: "kshitiz@gmail.com",
+      password: "kshitiz@gmail.com",
       joinedDate: "Joined 12/1/2023",
       bgColor: "bg-green-500",
     },
     {
       id: 3,
-      initials: "SJ",
-      name: "Diya Bogati",
+      initials: "DB",
+      username: "Diya Bogati",
       role: "UI/UX Designer",
-      email: "diya@gmail.com",
+      password: "diya@gmail.com",
       joinedDate: "Joined 12/1/2023",
       bgColor: "bg-purple-500",
     },
     {
       id: 4,
       initials: "PR",
-      name: "Piyus Rawal",
+      username: "Piyus Rawal",
       role: "Backend Developer",
-      email: "piyus@.com",
+      password: "piyus@.com",
       joinedDate: "Joined 12/1/2023",
-      bgColor: "bg-purple-500",
+      bgColor: "bg-orange-500",
     },
   ]);
 
   const [showForm, setShowForm] = useState(false);
   const [formData, setFormData] = useState({
     id: null,
-    name: "",
-    email: "",
-    role: "",
+    username: "",
+    password: "",
+    role: "user",
   });
   const [editingMember, setEditingMember] = useState(null);
 
+  // Fixed handleInputChange
   const handleInputChange = (e) => {
     setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    if (!formData.name || !formData.email || !formData.role) {
-      alert("Please fill in all fields.");
-      return;
-    }
+  const handleSubmit = async (e) => {
+  e.preventDefault();
 
-    if (editingMember) {
-      setTeamMembers((prev) =>
-        prev.map((member) =>
-          member.id === formData.id ? { ...member, ...formData } : member
-        )
-      );
-      setEditingMember(null);
+  if (!formData.username || !formData.password || !formData.role) {
+    alert("Please fill in all fields.");
+    return;
+  }
+
+  try {
+    const res = await addUser(formData); // send data to Flask
+    if (res.error) {
+      alert(res.error);
     } else {
+      alert(res.message); // "User added successfully!"
+
+      // Update frontend state
       const today = new Date();
       const joinedDate = `Joined ${today.toLocaleDateString("en-US")}`;
-      const { initials, bgColor } = generateAvatarProps(formData.name);
+      const { initials, bgColor } = generateAvatarProps(formData.username);
       const newMember = {
         id: Date.now(),
         ...formData,
@@ -100,18 +103,24 @@ export default function App() {
         joinedDate,
       };
       setTeamMembers((prev) => [...prev, newMember]);
-    }
 
-    setFormData({ id: null, name: "", email: "", role: "" });
-    setShowForm(false);
-  };
+      // Reset form
+      setFormData({ id: null, username: "", password: "", role: "user" });
+      setShowForm(false);
+    }
+  } catch (err) {
+    alert("Failed to add user. Check the backend server.");
+    console.error(err);
+  }
+};
+
 
   const handleEditClick = (memberToEdit) => {
     setEditingMember(memberToEdit);
     setFormData({
       id: memberToEdit.id,
-      name: memberToEdit.name,
-      email: memberToEdit.email,
+      username: memberToEdit.username,
+      password: memberToEdit.password,
       role: memberToEdit.role,
     });
     setShowForm(true);
@@ -128,7 +137,7 @@ export default function App() {
   const handleCloseForm = () => {
     setShowForm(false);
     setEditingMember(null);
-    setFormData({ id: null, name: "", email: "", role: "" });
+    setFormData({ id: null, username: "", password: "", role: "user" });
   };
 
   return (
@@ -144,7 +153,7 @@ export default function App() {
           <button
             onClick={() => {
               setEditingMember(null);
-              setFormData({ id: null, name: "", email: "", role: "" });
+              setFormData({ id: null, username: "", password: "", role: "user" });
               setShowForm(true);
             }}
             className="flex items-center px-5 py-2 bg-blue-600 text-white rounded-lg shadow-md hover:bg-blue-700 transition duration-200 mt-4 sm:mt-0"
@@ -168,7 +177,7 @@ export default function App() {
                   </div>
                   <div className="flex-grow">
                     <h2 className="text-lg font-semibold text-gray-800">
-                      {member.name}
+                      {member.username}
                     </h2>
                     <p className="text-blue-600 text-sm font-medium">
                       {member.role}
@@ -179,7 +188,7 @@ export default function App() {
                 <div className="space-y-3 sm:space-y-0 sm:space-x-6 flex flex-col sm:flex-row items-start sm:items-center text-gray-600 text-sm flex-grow sm:flex-grow-0">
                   <div className="flex items-center">
                     <Mail size={16} className="mr-2 text-gray-500" />
-                    <span>{member.email}</span>
+                    <span>{member.password}</span>
                   </div>
                   <div className="flex items-center">
                     <Calendar size={16} className="mr-2 text-gray-500" />
@@ -228,45 +237,47 @@ export default function App() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Full Name
+                  Username
                 </label>
                 <input
                   type="text"
-                  name="name"
-                  placeholder="e.g. Pankaj hamal"
-                  value={formData.name}
+                  name="username"
+                  placeholder="e.g. Pankaj Hamal"
+                  value={formData.username}
                   onChange={handleInputChange}
                   className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
                   required
                 />
               </div>
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Email
+                  Password
                 </label>
                 <input
-                  type="email"
-                  name="email"
-                  placeholder="e.g. pankaj@gmail.com"
-                  value={formData.email}
+                  type="password"
+                  name="password"
+                  value={formData.password}
                   onChange={handleInputChange}
                   className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
                   required
                 />
               </div>
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Role
                 </label>
-                <input
-                  type="text"
+                <select
                   name="role"
-                  placeholder="e.g. Project Manager"
                   value={formData.role}
                   onChange={handleInputChange}
                   className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
                   required
-                />
+                >
+                  <option value="user">User</option>
+                  <option value="admin">Admin</option>
+                </select>
               </div>
 
               <div className="flex justify-end space-x-3 mt-6">
