@@ -12,10 +12,14 @@ export const signup = async (userData) => {
 };
 
 export const login = async (userData) => {
-  return await axios.post(`${API_URL}/login`, userData, {
-    headers: {
-      "Content-Type": "application/json",
-    },
-    withCredentials: true,
-  });
+  try {
+    const response = await axios.post(`${API_URL}/login`, userData, {
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+    return response.data; // should contain access_token and role
+  } catch (err) {
+    throw err.response?.data || err;
+  }
 };

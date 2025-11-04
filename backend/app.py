@@ -26,7 +26,6 @@ class User(db.Model):
 
 # Create DB
 with app.app_context():
-    db.drop_all() ## If not working remove this later
     db.create_all()
 
 @app.route('/signup', methods=['POST'])
@@ -51,15 +50,20 @@ def signup():
 @app.route('/login', methods=['POST'])
 def login():
     data = request.get_json()
-    email = data.get('email')
+    username = data.get('username')
     password = data.get('password')
 
-    user = User.query.filter_by(email=email).first()
-    if user and bcrypt.check_password_hash(user.password, password):
-        access_token = create_access_token(identity=user.id)
-        return jsonify({"access_token": access_token, "username": user.username}), 200
+    user = User.query.filter_by(username=username).first()
+    if not user:
+        return jsonify({'error': 'User not found'}), 404
 
-    return jsonify({"message": "Invalid credentials"}), 401
+    if not bcrypt.check_password_hash(user.password, password):
+        return jsonify({'error': 'Invalid password'}), 401
+
+    # Create JWT token
+    access_token = create_access_token(identity={'id': user.id, 'username': user.username, 'role': user.role})
+    return jsonify({'message': 'Login successful', 'access_token': access_token}), 200
+
 
 @app.route('/protected', methods=['GET'])
 @jwt_required()
