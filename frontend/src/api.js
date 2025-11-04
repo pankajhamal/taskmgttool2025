@@ -23,3 +23,28 @@ export const login = async (userData) => {
     throw err.response?.data || err;
   }
 };
+
+const getAuthHeader = () => {
+  const token = localStorage.getItem("token");
+  return { Authorization: `Bearer ${token}` };
+};
+
+// Get all users
+export const fetchUsers = async () => {
+  return axios.get(`${API_URL}/users`, { headers: getAuthHeader() });
+};
+
+// Add a new user
+export const addUser = async (userData) => {
+  return axios.post(`${API_URL}/users`, userData, { headers: getAuthHeader() });
+};
+
+// Update a user
+export const updateUser = async (id, userData) => {
+  return axios.put(`${API_URL}/users/${id}`, userData, { headers: getAuthHeader() });
+};
+
+// Delete a user
+export const deleteUser = async (id) => {
+  return axios.delete(`${API_URL}/users/${id}`, { headers: getAuthHeader() });
+};

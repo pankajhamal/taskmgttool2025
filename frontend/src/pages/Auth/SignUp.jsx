@@ -8,13 +8,15 @@ import { signup } from "../../api";
 const Signup = () => {
   const navigate = useNavigate();
   const [username, setUsername] = useState("");
+  const [email, setEmail] = useState(""); // new email state
   const [password, setPassword] = useState("");
 
   const handleSignup = async (e) => {
     e.preventDefault();
-    if (!username || !password) return alert("Enter username and password");
+    if (!username || !email || !password)
+      return alert("Enter username, email, and password");
 
-    const res = await signup({ username, password });
+    const res = await signup({ username, email, password }); // include email
     if (res.error) {
       alert(res.error);
     } else {
@@ -38,8 +40,11 @@ const Signup = () => {
                 Please enter your signup details below
               </p>
               <form onSubmit={handleSignup}>
+                {/* Username */}
                 <div className="mt-8">
-                  <label className="text-2xl block mb-1" htmlFor="username">Username:</label>
+                  <label className="text-2xl block mb-1" htmlFor="username">
+                    Username:
+                  </label>
                   <input
                     type="text"
                     id="username"
@@ -50,8 +55,28 @@ const Signup = () => {
                     required
                   />
                 </div>
+
+                {/* Email */}
                 <div className="mt-4">
-                  <label className="text-2xl block mb-1" htmlFor="password">Password:</label>
+                  <label className="text-2xl block mb-1" htmlFor="email">
+                    Email:
+                  </label>
+                  <input
+                    type="email"
+                    id="email"
+                    placeholder="Enter email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="border-2 border-solid outline-0 border-blue-400 rounded-xl w-110 h-14 p-2"
+                    required
+                  />
+                </div>
+
+                {/* Password */}
+                <div className="mt-4">
+                  <label className="text-2xl block mb-1" htmlFor="password">
+                    Password:
+                  </label>
                   <input
                     type="password"
                     id="password"
@@ -62,10 +87,21 @@ const Signup = () => {
                     required
                   />
                 </div>
-                <button className="w-100 h-15 bg-blue-600 text-white text-xl mt-8 rounded-2xl">Sign Up</button>
+
+                <button className="w-100 h-15 bg-blue-600 text-white text-xl mt-8 rounded-2xl">
+                  Sign Up
+                </button>
+
                 <div className="mt-4 ml-2 flex">
-                  <p className="text-[#7F8CAA] text-xl mr-2">Already have an account?</p>
-                  <NavLink to={"/login"} className="text-blue-800 hover:underline text-xl">Login</NavLink>
+                  <p className="text-[#7F8CAA] text-xl mr-2">
+                    Already have an account?
+                  </p>
+                  <NavLink
+                    to={"/login"}
+                    className="text-blue-800 hover:underline text-xl"
+                  >
+                    Login
+                  </NavLink>
                 </div>
               </form>
             </div>

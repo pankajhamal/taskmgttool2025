@@ -74,3 +74,55 @@ def protected():
     current_user_id = get_jwt_identity()
     user = User.query.get(current_user_id)
     return jsonify({"message": f"Hello {user.username}, this is a protected route"})
+
+
+
+###### CRUD FUNCTIONALITY FOR USER MANAGEMENT ######
+
+# Get all users (admin only)
+@app.route('/admin/users', methods=['GET'])
+@jwt_required()
+def get_users():
+    current_user_id = get_jwt_identity()
+    current_user = User.query.get(current_user_id)
+    if current_user.role != "admin":
+        return jsonify({'error': 'Unauthorized'}), 403
+    users = User.query.all()
+    users_list = [{'id': u.id, 'username': u.username, 'role': u.role, 'email': u.email} for u in users]
+    return jsonify(users_list), 200
+
+# Add new user
+@app.route('/admin/users', methods=['POST'])
+@jwt_required()
+def add_user():
+    current_user_id = get_jwt_identity()
+    current_user = User.query.get(current_user_id)
+    if current_user.role != "admin":
+        return jsonify({'error': 'Unauthorized'}), 403
+
+    data = request.get_json()
+    username = data.get('username')
+    password = data.get('password')
+    role = data.get('role', 'user')
+
+    if User.query.filter_by(username=username).first():
+        return jsonify({'error': 'Username already exists'}), 409
+
+    hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
+    new_user = User(username=username, password=hashed_password, role=role)
+    db.session.add(new_user)
+    db.session.commit()
+    return jsonify({'message': 'User created successfully'}), 201
+
+# Delete user
+@app.route('/admin/users/<int:user_id>', methods=['DELETE'])
+@jwt_required()
+def delete_user(user_id):
+    current_user_id = get_jwt_identity()
+    current_user = User.query.get(current_user_id)
+    if current_user.role != "admin":
+        return jsonify({'error': 'Unauthorized'}), 403
+    user = User.query.get_or_404(user_id)
+    db.session.delete(user)
+    db.session.commit()
+    return jsonify({'message': 'User deleted'}), 200
