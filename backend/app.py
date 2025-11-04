@@ -21,8 +21,8 @@ CORS(app, supports_credentials=True, resources={r"/*": {"origins": "http://local
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True, nullable=False)
-    email = db.Column(db.String(120), unique=True, nullable=True) 
-    password = db.Column(db.String(200), nullable=False)
+    password = db.Column(db.String(120), nullable=False)
+    role = db.Column(db.String(10), nullable=False, default='admin')
 
 # Create DB
 with app.app_context():
@@ -40,7 +40,8 @@ def signup():
         return jsonify({"message": "User already exists"}), 409
 
     hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
-    new_user = User(username=username, email=email, password=hashed_password)
+    new_user = User(username=username, password=hashed_password, role='admin')
+
     
     db.session.add(new_user)
     db.session.commit()
