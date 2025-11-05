@@ -39,3 +39,13 @@ export const fetchUsers = async () => {
 export const addUser = async (userData) => {
   return axios.post(`${API_URL}/admin/users`, userData, { headers: getAuthHeader() });
 };
+
+// Update existing user
+export const updateUser = async (id, userData) => {
+  return axios.put(`${API_URL}/admin/users/${id}`, userData, {
+    headers: {
+      ...getAuthHeader(),
+      "Content-Type": "application/json", // important!
+    },
+  });
+};

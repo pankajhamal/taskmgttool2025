@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Mail, Pencil, Trash2, Plus, X } from "lucide-react";
-import { fetchUsers, addUser } from "../../api";
+import { fetchUsers, addUser, updateUser } from "../../api";
 
 // Generate avatar initials and background color
 const generateAvatarProps = (username) => {
@@ -67,56 +67,56 @@ export default function ManageUsers() {
     setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+ const handleSubmit = async (e) => {
+  e.preventDefault();
 
-    if (
-      !formData.username ||
-      !formData.role ||
-      !formData.email ||
-      (!editingMember && !formData.password)
-    ) {
-      alert("Please fill all required fields.");
-      return;
-    }
+  if (
+    !formData.username ||
+    !formData.role ||
+    !formData.email ||
+    (!editingMember && !formData.password)
+  ) {
+    alert("Please fill all required fields.");
+    return;
+  }
 
-    try {
-      if (editingMember) {
-        // Edit user
-        await updateUser(formData.id, {
-          username: formData.username,
-          email: formData.email,
-          role: formData.role,
-          password: formData.password || undefined, // send only if new password is provided
-        });
-      } else {
-        // Add new user
-        await addUser({
-          username: formData.username,
-          email: formData.email,
-          password: formData.password,
-          role: formData.role, // "user" or "admin"
-        });
-      }
-
-      // Reload users from backend
-      await loadUsers();
-
-      // Reset form
-      setShowForm(false);
-      setEditingMember(null);
-      setFormData({
-        id: null,
-        username: "",
-        email: "",
-        password: "",
-        role: "user",
+  try {
+    if (editingMember) {
+      // Edit user
+      await updateUser(formData.id, {
+        username: formData.username,
+        email: formData.email,
+        role: formData.role,       // <-- important: send 'user' or 'admin'
+        password: formData.password || undefined,
       });
-    } catch (err) {
-      console.error("Error adding/updating user:", err);
-      alert("Failed to add/update user. Check console for details.");
+    } else {
+      // Add new user
+      await addUser({
+        username: formData.username,
+        email: formData.email,
+        password: formData.password,
+        role: formData.role,       // <-- important: send 'user' or 'admin'
+      });
     }
-  };
+
+    await loadUsers();
+
+    // Reset form
+    setShowForm(false);
+    setEditingMember(null);
+    setFormData({
+      id: null,
+      username: "",
+      email: "",
+      password: "",
+      role: "user",  // default for add user form
+    });
+  } catch (err) {
+    console.error("Error adding/updating user:", err);
+    alert("Failed to add/update user. Check console for details.");
+  }
+};
+
 
   const handleEditClick = (member) => {
     setEditingMember(member);

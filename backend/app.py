@@ -23,7 +23,7 @@ class User(db.Model):
     username = db.Column(db.String(80), unique=True, nullable=False)
     password = db.Column(db.String(120), nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False)  # <-- Add this line
-    role = db.Column(db.String(10), nullable=False, default='admin')
+    role = db.Column(db.String(10), nullable=False, default="admin")  # remove default
 
 
 # Create DB
@@ -95,7 +95,7 @@ def get_users():
     {
         'id': user.id,
         'username': user.username,
-        'role': 'admin' if user.role else 'user',
+        'role': user.role,
         'email': user.email
     }
     for user in users
@@ -125,7 +125,7 @@ def add_user():
 
     # Hash password
     hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
-
+    
     new_user = User(username=username, email=email, password=hashed_password, role=role)
     db.session.add(new_user)
     db.session.commit()
@@ -136,3 +136,30 @@ def add_user():
         "email": new_user.email,
         "role": new_user.role
     }), 201
+
+
+# Update existing user
+# Update existing user (no JWT required)
+@app.route('/admin/users/<int:user_id>', methods=['PUT'])
+def update_user(user_id):
+    # Find the user to update
+    user = User.query.get(user_id)
+    if not user:
+        return jsonify({"message": "User not found"}), 404
+
+    # Get data from request
+    data = request.get_json()
+    if not data:
+        return jsonify({"message": "No JSON data received"}), 400
+
+    # Update user fields
+    user.username = data.get('username', user.username)
+    user.email = data.get('email', user.email)
+    if 'password' in data and data['password']:
+        user.password = bcrypt.generate_password_hash(data['password']).decode('utf-8')
+    
+    user.role = data.get('role', user.role)  # directly set "admin" or "user"
+
+    # Commit changes
+    db.session.commit()
+    return jsonify({"message": "User updated successfully"})
