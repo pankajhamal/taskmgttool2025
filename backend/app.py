@@ -96,3 +96,38 @@ def get_users():
         for user in users
     ]
     return jsonify(user_list)
+
+# Add new user
+
+@app.route('/admin/users', methods=['POST'])
+def add_user():
+    data = request.get_json()
+    
+    if not data:
+        return jsonify({"msg": "Invalid JSON"}), 400
+
+    username = data.get("username")
+    email = data.get("email")
+    password = data.get("password")
+    role = data.get("role", "user")  # default to 'user'
+
+    if not username or not email or not password:
+        return jsonify({"msg": "Missing required fields"}), 400
+
+    # Check if username or email already exists
+    if User.query.filter((User.username == username) | (User.email == email)).first():
+        return jsonify({"msg": "Username or email already exists"}), 409
+
+    # Hash password
+    hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
+
+    new_user = User(username=username, email=email, password=hashed_password, role=role)
+    db.session.add(new_user)
+    db.session.commit()
+
+    return jsonify({
+        "id": new_user.id,
+        "username": new_user.username,
+        "email": new_user.email,
+        "role": new_user.role
+    }), 201

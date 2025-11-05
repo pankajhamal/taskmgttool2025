@@ -1,40 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { Mail, Calendar, Pencil, Trash2, Plus, X } from "lucide-react";
-import { fetchUsers} from "../../api";
-
-// --- DUMMY DATA FOR DEVELOPMENT ---
-// The 'created_at' property is retained in the source data but will not be processed into 'joinedDate'
-const DUMMY_USERS = [
-  {
-    id: 1,
-    username: "Pankaj Hamal",
-    email: "pankaj.h@example.com",
-    role: "admin",
-    created_at: new Date(Date.now() - 86400000 * 30).toISOString(), // 30 days ago
-  },
-  {
-    id: 2,
-    username: "Sushma Bista",
-    email: "sushma.b@example.com",
-    role: "user",
-    created_at: new Date(Date.now() - 86400000 * 5).toISOString(), // 5 days ago
-  },
-  {
-    id: 3,
-    username: "Aarav Sharma",
-    email: "aarav.s@example.com",
-    role: "user",
-    created_at: new Date(Date.now() - 86400000 * 120).toISOString(), // 120 days ago
-  },
-  {
-    id: 4,
-    username: "Dipesh Rana",
-    email: "dipesh.r@example.com",
-    role: "user",
-    created_at: new Date(Date.now() - 86400000 * 60).toISOString(), // 60 days ago
-  },
-];
-// --- END DUMMY DATA ---
+import { Mail, Pencil, Trash2, Plus, X } from "lucide-react";
+import { fetchUsers, addUser } from "../../api";
 
 // Generate avatar initials and background color
 const generateAvatarProps = (username) => {
@@ -77,28 +43,21 @@ export default function ManageUsers() {
       email: u.email,
       role: u.role,
       password: "••••••••",
-      // REMOVED: joinedDate calculation
       ...generateAvatarProps(u.username),
     }));
   };
 
-  // Load users from backend (with dummy data fallback)
-const loadUsers = async () => {
-  try {
-    const res = await fetchUsers();
-    setTeamMembers(
-      res.data.map(user => ({
-        ...user,
-        password: "••••••••",
-        ...generateAvatarProps(user.username)
-      }))
-    );
-    console.log("Users loaded from backend:", res.data);
-  } catch (err) {
-    console.error("Failed to fetch users from backend:", err);
-    setTeamMembers([]); // No dummy data
-  }
-};
+  // Load users from backend
+  const loadUsers = async () => {
+    try {
+      const res = await fetchUsers();
+      setTeamMembers(processUsers(res.data));
+      console.log("Users loaded from backend:", res.data);
+    } catch (err) {
+      console.error("Failed to fetch users from backend:", err);
+      setTeamMembers([]); // no dummy data
+    }
+  };
 
   useEffect(() => {
     loadUsers();
@@ -111,45 +70,51 @@ const loadUsers = async () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!formData.username || !formData.role || !formData.email || (!editingMember && !formData.password)) {
+    if (
+      !formData.username ||
+      !formData.role ||
+      !formData.email ||
+      (!editingMember && !formData.password)
+    ) {
       alert("Please fill all required fields.");
       return;
     }
 
     try {
       if (editingMember) {
-        // Optimistic update
-        const updatedList = teamMembers.map(member =>
-            member.id === formData.id
-                ? { ...member, username: formData.username, email: formData.email, role: formData.role, ...generateAvatarProps(formData.username) }
-                : member
-        );
-        setTeamMembers(updatedList);
-        await updateUser(formData.id, formData);
-        alert("User updated successfully! (Note: API call likely failed)");
+        // Edit user
+        await updateUser(formData.id, {
+          username: formData.username,
+          email: formData.email,
+          role: formData.role,
+          password: formData.password || undefined, // send only if new password is provided
+        });
       } else {
-        // Optimistic add
-        const newId = Math.max(...teamMembers.map(m => m.id), 0) + 1; // Use 0 for initial case
-        const newUser = {
-            id: newId,
-            username: formData.username,
-            email: formData.email,
-            role: formData.role,
-            password: "••••••••",
-            // REMOVED: joinedDate property
-            ...generateAvatarProps(formData.username),
-        };
-        setTeamMembers(prev => [...prev, newUser]);
-        await addUser(formData);
-        alert("User added successfully! (Note: API call likely failed)");
+        // Add new user
+        await addUser({
+          username: formData.username,
+          email: formData.email,
+          password: formData.password,
+          role: formData.role, // "user" or "admin"
+        });
       }
 
+      // Reload users from backend
+      await loadUsers();
+
+      // Reset form
       setShowForm(false);
       setEditingMember(null);
-      setFormData({ id: null, username: "", email: "", password: "", role: "user" });
+      setFormData({
+        id: null,
+        username: "",
+        email: "",
+        password: "",
+        role: "user",
+      });
     } catch (err) {
-      console.error(err);
-      // alert("Operation failed. Check backend.");
+      console.error("Error adding/updating user:", err);
+      alert("Failed to add/update user. Check console for details.");
     }
   };
 
@@ -159,7 +124,7 @@ const loadUsers = async () => {
       id: member.id,
       username: member.username,
       email: member.email,
-      password: "", // leave empty so admin can reset
+      password: "",
       role: member.role,
     });
     setShowForm(true);
@@ -168,13 +133,10 @@ const loadUsers = async () => {
   const handleDeleteClick = async (id) => {
     if (window.confirm("Are you sure you want to delete this member?")) {
       try {
-        // Optimistic delete
-        setTeamMembers(teamMembers.filter(member => member.id !== id));
         await deleteUser(id);
-        alert("User deleted successfully! (Note: API call likely failed)");
+        await loadUsers();
       } catch (err) {
-        console.error(err);
-        // alert("Delete failed.");
+        console.error("Failed to delete user:", err);
       }
     }
   };
@@ -182,11 +144,17 @@ const loadUsers = async () => {
   const handleCloseForm = () => {
     setShowForm(false);
     setEditingMember(null);
-    setFormData({ id: null, username: "", email: "", password: "", role: "user" });
+    setFormData({
+      id: null,
+      username: "",
+      email: "",
+      password: "",
+      role: "user",
+    });
   };
 
   return (
-    <div className="h-160 bg-gray-100 p-6 font-sans ">
+    <div className="h-160 bg-gray-100 p-6 font-sans">
       <div className="max-w-4xl">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8">
           <div>
@@ -198,7 +166,13 @@ const loadUsers = async () => {
           <button
             onClick={() => {
               setEditingMember(null);
-              setFormData({ id: null, username: "", email: "", password: "", role: "user" });
+              setFormData({
+                id: null,
+                username: "",
+                email: "",
+                password: "",
+                role: "user",
+              });
               setShowForm(true);
             }}
             className="flex items-center px-5 py-2 bg-blue-600 text-white rounded-lg shadow-md hover:bg-blue-700 transition duration-200 mt-4 sm:mt-0"
@@ -212,7 +186,7 @@ const loadUsers = async () => {
             teamMembers.map((member) => (
               <div
                 key={member.id}
-                className="bg-white rounded-lg shadow-md p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center border border-gray-200 hover:shadow-lg transition "
+                className="bg-white rounded-lg shadow-md p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center border border-gray-200 hover:shadow-lg transition"
               >
                 <div className="flex items-center mb-4 sm:mb-0 sm:mr-6 w-full sm:w-auto">
                   <div
@@ -230,13 +204,11 @@ const loadUsers = async () => {
                   </div>
                 </div>
 
-                {/* Updated display section: Only shows Email */}
                 <div className="space-y-3 sm:space-y-0 sm:space-x-6 flex flex-col sm:flex-row items-start sm:items-center text-gray-600 text-sm flex-grow sm:flex-grow-0">
                   <div className="flex items-center">
                     <Mail size={16} className="mr-2 text-gray-500" />
                     <span>{member.email}</span>
                   </div>
-                  {/* REMOVED: Joined Date block */}
                 </div>
 
                 <div className="flex justify-end space-x-2 mt-4 sm:mt-0 ml-auto">
@@ -318,8 +290,10 @@ const loadUsers = async () => {
                   value={formData.password}
                   onChange={handleInputChange}
                   className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                  required={!editingMember} // required only for new user
-                  placeholder={editingMember ? "Leave blank to keep current password" : ""}
+                  required={!editingMember} // only required for new user
+                  placeholder={
+                    editingMember ? "Leave blank to keep current password" : ""
+                  }
                 />
               </div>
 
@@ -351,7 +325,7 @@ const loadUsers = async () => {
                   type="submit"
                   className="px-5 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
                 >
-                  {editingMember ? "Save Changes" : "Add Member"}
+                  {editingMember ? "Update Member" : "Add Member"}
                 </button>
               </div>
             </form>

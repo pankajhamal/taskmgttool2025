@@ -34,3 +34,8 @@ const getAuthHeader = () => {
 export const fetchUsers = async () => {
   return axios.get(`${API_URL}/admin/users`, { headers: getAuthHeader() });
 };
+
+// Add a new user
+export const addUser = async (userData) => {
+  return axios.post(`${API_URL}/admin/users`, userData, { headers: getAuthHeader() });
+};
