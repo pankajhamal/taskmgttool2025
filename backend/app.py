@@ -84,3 +84,15 @@ def protected():
     user = User.query.get(current_user_id)
     return jsonify({"message": f"Hello {user.username}, this is a protected route"})
 
+############ CRUD Operations for Users ############
+
+# Get all users
+
+@app.route('/admin/users', methods=['GET'])
+def get_users():
+    users = User.query.all()
+    user_list = [
+        {'id': user.id, 'username': user.username, 'role': user.role}
+        for user in users
+    ]
+    return jsonify(user_list)

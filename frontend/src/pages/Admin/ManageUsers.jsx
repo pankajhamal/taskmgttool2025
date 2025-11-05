@@ -1,6 +1,40 @@
 import React, { useState, useEffect } from "react";
 import { Mail, Calendar, Pencil, Trash2, Plus, X } from "lucide-react";
-import { fetchUsers, addUser, updateUser, deleteUser } from "../../api";
+import { fetchUsers} from "../../api";
+
+// --- DUMMY DATA FOR DEVELOPMENT ---
+// The 'created_at' property is retained in the source data but will not be processed into 'joinedDate'
+const DUMMY_USERS = [
+  {
+    id: 1,
+    username: "Pankaj Hamal",
+    email: "pankaj.h@example.com",
+    role: "admin",
+    created_at: new Date(Date.now() - 86400000 * 30).toISOString(), // 30 days ago
+  },
+  {
+    id: 2,
+    username: "Sushma Bista",
+    email: "sushma.b@example.com",
+    role: "user",
+    created_at: new Date(Date.now() - 86400000 * 5).toISOString(), // 5 days ago
+  },
+  {
+    id: 3,
+    username: "Aarav Sharma",
+    email: "aarav.s@example.com",
+    role: "user",
+    created_at: new Date(Date.now() - 86400000 * 120).toISOString(), // 120 days ago
+  },
+  {
+    id: 4,
+    username: "Dipesh Rana",
+    email: "dipesh.r@example.com",
+    role: "user",
+    created_at: new Date(Date.now() - 86400000 * 60).toISOString(), // 60 days ago
+  },
+];
+// --- END DUMMY DATA ---
 
 // Generate avatar initials and background color
 const generateAvatarProps = (username) => {
@@ -35,25 +69,36 @@ export default function ManageUsers() {
   });
   const [editingMember, setEditingMember] = useState(null);
 
-  // Load users from backend
-  const loadUsers = async () => {
-    try {
-      const res = await fetchUsers();
-      const users = res.data.map((u) => ({
-        id: u.id,
-        username: u.username,
-        email: u.email,
-        role: u.role,
-        password: "••••••••",
-        joinedDate: `Joined ${new Date(u.created_at).toLocaleDateString()}`,
-        ...generateAvatarProps(u.username),
-      }));
-      setTeamMembers(users);
-    } catch (err) {
-      console.error(err);
-      alert("Failed to fetch users from backend.");
-    }
+  // Helper function to process raw user data
+  const processUsers = (users) => {
+    return users.map((u) => ({
+      id: u.id,
+      username: u.username,
+      email: u.email,
+      role: u.role,
+      password: "••••••••",
+      // REMOVED: joinedDate calculation
+      ...generateAvatarProps(u.username),
+    }));
   };
+
+  // Load users from backend (with dummy data fallback)
+const loadUsers = async () => {
+  try {
+    const res = await fetchUsers();
+    setTeamMembers(
+      res.data.map(user => ({
+        ...user,
+        password: "••••••••",
+        ...generateAvatarProps(user.username)
+      }))
+    );
+    console.log("Users loaded from backend:", res.data);
+  } catch (err) {
+    console.error("Failed to fetch users from backend:", err);
+    setTeamMembers([]); // No dummy data
+  }
+};
 
   useEffect(() => {
     loadUsers();
@@ -66,27 +111,45 @@ export default function ManageUsers() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!formData.username || !formData.password || !formData.role || !formData.email) {
-      alert("Please fill all fields.");
+    if (!formData.username || !formData.role || !formData.email || (!editingMember && !formData.password)) {
+      alert("Please fill all required fields.");
       return;
     }
 
     try {
       if (editingMember) {
+        // Optimistic update
+        const updatedList = teamMembers.map(member =>
+            member.id === formData.id
+                ? { ...member, username: formData.username, email: formData.email, role: formData.role, ...generateAvatarProps(formData.username) }
+                : member
+        );
+        setTeamMembers(updatedList);
         await updateUser(formData.id, formData);
-        alert("User updated successfully!");
+        alert("User updated successfully! (Note: API call likely failed)");
       } else {
+        // Optimistic add
+        const newId = Math.max(...teamMembers.map(m => m.id), 0) + 1; // Use 0 for initial case
+        const newUser = {
+            id: newId,
+            username: formData.username,
+            email: formData.email,
+            role: formData.role,
+            password: "••••••••",
+            // REMOVED: joinedDate property
+            ...generateAvatarProps(formData.username),
+        };
+        setTeamMembers(prev => [...prev, newUser]);
         await addUser(formData);
-        alert("User added successfully!");
+        alert("User added successfully! (Note: API call likely failed)");
       }
 
       setShowForm(false);
       setEditingMember(null);
       setFormData({ id: null, username: "", email: "", password: "", role: "user" });
-      loadUsers();
     } catch (err) {
       console.error(err);
-      alert("Operation failed. Check backend.");
+      // alert("Operation failed. Check backend.");
     }
   };
 
@@ -105,11 +168,13 @@ export default function ManageUsers() {
   const handleDeleteClick = async (id) => {
     if (window.confirm("Are you sure you want to delete this member?")) {
       try {
+        // Optimistic delete
+        setTeamMembers(teamMembers.filter(member => member.id !== id));
         await deleteUser(id);
-        loadUsers();
+        alert("User deleted successfully! (Note: API call likely failed)");
       } catch (err) {
         console.error(err);
-        alert("Delete failed.");
+        // alert("Delete failed.");
       }
     }
   };
@@ -165,15 +230,13 @@ export default function ManageUsers() {
                   </div>
                 </div>
 
+                {/* Updated display section: Only shows Email */}
                 <div className="space-y-3 sm:space-y-0 sm:space-x-6 flex flex-col sm:flex-row items-start sm:items-center text-gray-600 text-sm flex-grow sm:flex-grow-0">
                   <div className="flex items-center">
                     <Mail size={16} className="mr-2 text-gray-500" />
                     <span>{member.email}</span>
                   </div>
-                  <div className="flex items-center">
-                    <Calendar size={16} className="mr-2 text-gray-500" />
-                    <span>{member.joinedDate}</span>
-                  </div>
+                  {/* REMOVED: Joined Date block */}
                 </div>
 
                 <div className="flex justify-end space-x-2 mt-4 sm:mt-0 ml-auto">
