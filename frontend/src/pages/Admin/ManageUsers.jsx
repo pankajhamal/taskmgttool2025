@@ -48,16 +48,17 @@ export default function ManageUsers() {
   };
 
   // Load users from backend
-  const loadUsers = async () => {
-    try {
-      const res = await fetchUsers();
-      setTeamMembers(processUsers(res.data));
-      console.log("Users loaded from backend:", res.data);
-    } catch (err) {
-      console.error("Failed to fetch users from backend:", err);
-      setTeamMembers([]); // no dummy data
-    }
-  };
+const loadUsers = async () => {
+  try {
+    const ownerId = localStorage.getItem("userId"); // logged-in admin ID
+    const res = await fetchUsers(ownerId);          // pass ownerId to API
+    setTeamMembers(processUsers(res.data));
+    console.log("Users loaded from backend:", res.data);
+  } catch (err) {
+    console.error("Failed to fetch users from backend:", err);
+    setTeamMembers([]); // no dummy data
+  }
+};
 
   useEffect(() => {
     loadUsers();
@@ -96,6 +97,7 @@ export default function ManageUsers() {
         email: formData.email,
         password: formData.password,
         role: formData.role,       // <-- important: send 'user' or 'admin'
+        owner_id: localStorage.getItem("userId"), // <-- current admin's ID
       });
     }
 

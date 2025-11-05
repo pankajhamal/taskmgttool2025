@@ -24,6 +24,9 @@ class User(db.Model):
     password = db.Column(db.String(120), nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False)  # <-- Add this line
     role = db.Column(db.String(10), nullable=False, default="admin")  # remove default
+    # New field — points to the admin that owns this user
+    owner_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
+
 
 
 # Create DB
@@ -40,20 +43,24 @@ def signup():
     if not username or not password or not email:
         return jsonify({'error': 'Username, password, and email are required'}), 400
 
-    if User.query.filter_by(username=username).first():
-        return jsonify({"error": "Username already exists"}), 409
-
-    if User.query.filter_by(email=email).first():
-        return jsonify({"error": "Email already exists"}), 409  # ✅ check email
+    if User.query.filter_by(username=username).first() or User.query.filter_by(email=email).first():
+        return jsonify({"error": "Username or email already exists"}), 409
 
     hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
 
-    new_user = User(username=username, password=hashed_password, email=email, role='admin')
+    # ✅ top-level admin has no owner
+    new_user = User(username=username, password=hashed_password, email=email, role='admin', owner_id=None)
     
     db.session.add(new_user)
     db.session.commit()
+    # Set owner_id to self for the admin
+    new_user.owner_id = new_user.id
+    db.session.commit()
 
-    return jsonify({"message": "User created successfully"}), 201
+    return jsonify({
+        "message": "Admin created successfully",
+        "id": new_user.id
+    }), 201
 
 
 @app.route('/login', methods=['POST'])
@@ -71,62 +78,77 @@ def login():
 
     # Create JWT token
     access_token = create_access_token(identity={'id': user.id, 'username': user.username, 'role': user.role})
+    
+    # Return id explicitly so frontend can use it
     return jsonify({
         "message": "Login successful",
         "access_token": access_token,
-        "role": user.role  # <--- include this
+        "role": user.role,
+        "id": user.id   # <-- Add this
     }), 200
 
-@app.route('/protected', methods=['GET'])
-@jwt_required()
-def protected():
-    current_user_id = get_jwt_identity()
-    user = User.query.get(current_user_id)
-    return jsonify({"message": f"Hello {user.username}, this is a protected route"})
 
 ############ CRUD Operations for Users ############
 
 # Get all users
-
 @app.route('/admin/users', methods=['GET'])
 def get_users():
-    users = User.query.all()
+    owner_id = request.args.get('owner_id')
+
+    if owner_id:
+        users = User.query.filter(
+            (User.owner_id == owner_id) | (User.id == owner_id)  # include the admin themselves
+        ).all()
+    else:
+        users = User.query.all()
+
     user_list = [
-    {
-        'id': user.id,
-        'username': user.username,
-        'role': user.role,
-        'email': user.email
-    }
-    for user in users
-]
+        {
+            'id': user.id,
+            'username': user.username,
+            'role': user.role,
+            'email': user.email
+        }
+        for user in users
+    ]
     return jsonify(user_list)
 
-# Add new user
 
+# Add new user
 @app.route('/admin/users', methods=['POST'])
 def add_user():
     data = request.get_json()
-    
     if not data:
         return jsonify({"msg": "Invalid JSON"}), 400
 
     username = data.get("username")
     email = data.get("email")
     password = data.get("password")
-    role = data.get("role", "user")  # default to 'user'
+    role = data.get("role", "user")
+    owner_id = data.get("owner_id")  # The admin creating this user
 
     if not username or not email or not password:
         return jsonify({"msg": "Missing required fields"}), 400
 
-    # Check if username or email already exists
+    if not owner_id:
+        return jsonify({"msg": "Owner ID is required"}), 400
+
+    # Check for duplicate username or email under the same owner
     if User.query.filter((User.username == username) | (User.email == email)).first():
         return jsonify({"msg": "Username or email already exists"}), 409
 
     # Hash password
     hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
-    
-    new_user = User(username=username, email=email, password=hashed_password, role=role)
+
+    # Create the new user
+    new_user = User(
+        username=username,
+        email=email,
+        password=hashed_password,
+        role=role,
+        owner_id=owner_id
+    )
+
     db.session.add(new_user)
     db.session.commit()
 
@@ -134,8 +156,10 @@ def add_user():
         "id": new_user.id,
         "username": new_user.username,
         "email": new_user.email,
-        "role": new_user.role
+        "role": new_user.role,
+        "owner_id": new_user.owner_id
     }), 201
+
 
 
 # Update existing user

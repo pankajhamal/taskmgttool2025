@@ -31,14 +31,24 @@ const getAuthHeader = () => {
 
 
 // Get all users
-export const fetchUsers = async () => {
-  return axios.get(`${API_URL}/admin/users`, { headers: getAuthHeader() });
+export const fetchUsers = async (ownerId) => {
+  const url = ownerId 
+    ? `${API_URL}/admin/users?owner_id=${ownerId}` 
+    : `${API_URL}/admin/users`;
+  return axios.get(url, { headers: getAuthHeader() });
 };
+
 
 // Add a new user
 export const addUser = async (userData) => {
-  return axios.post(`${API_URL}/admin/users`, userData, { headers: getAuthHeader() });
+  const token = localStorage.getItem("token");
+  return await axios.post(`${API_URL}/admin/users`, userData, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
 };
+
 
 // Update existing user
 export const updateUser = async (id, userData) => {

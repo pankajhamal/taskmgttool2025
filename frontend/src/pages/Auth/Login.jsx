@@ -22,27 +22,28 @@ const Login = () => {
 
     try {
       const res = await axios.post(
-        `${API_BASE_URL}/login`, // Updated endpoint
+        `${API_BASE_URL}/login`,
         { username, password },
         { headers: { "Content-Type": "application/json" } }
       );
 
-      const { access_token, role } = res.data; // Updated to match Flask response
+      const { access_token, role, id } = res.data; // Get user ID from backend
 
       if (!access_token) {
         alert("Login failed");
         return;
       }
 
-      // Save token and role in localStorage
+      // Save token, role, and user ID in localStorage
       localStorage.setItem("token", access_token);
       localStorage.setItem("role", role);
+      localStorage.setItem("userId", id);
 
       // Redirect based on role
       if (role === "admin") {
-        navigate("/admin/dashboard");
+        navigate(`/admin/dashboard/${id}`); // Each admin goes to their own dashboard
       } else {
-        navigate("/user/dashboard");
+        navigate(`/user/dashboard/${id}`);
       }
     } catch (err) {
       alert(err.response?.data?.error || "Login failed");
