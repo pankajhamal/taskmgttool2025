@@ -27,7 +27,14 @@ class User(db.Model):
     # New field — points to the admin that owns this user
     owner_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
 
-
+# Task model
+class Task(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(150), nullable=False)
+    description = db.Column(db.Text, nullable=True)
+    status = db.Column(db.String(20), default="pending")  # pending, in-progress, done
+    owner_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)  # admin/user owner
+    assigned_to = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)  # assigned user
 
 # Create DB
 with app.app_context():
@@ -161,9 +168,8 @@ def add_user():
     }), 201
 
 
-
 # Update existing user
-# Update existing user (no JWT required)
+
 @app.route('/admin/users/<int:user_id>', methods=['PUT'])
 def update_user(user_id):
     # Find the user to update
@@ -199,3 +205,53 @@ def delete_user(user_id):
     db.session.delete(user)
     db.session.commit()
     return jsonify({"message": "User deleted successfully"}), 200
+
+
+######## Create Task ######################################
+# Add new task
+# Add new task
+@app.route('/tasks', methods=['POST'])
+def add_task():
+    data = request.get_json()
+
+    title = data.get("title")
+    description = data.get("description")
+    start_date = data.get("startDate")  # optional, format: YYYY-MM-DD
+    due_date = data.get("dueDate")      # optional, format: YYYY-MM-DD
+    assigned_to = data.get("assignedTo") # username or user_id
+    priority = data.get("priority", "Medium")  # default to Medium
+    owner_id = data.get("owner_id")     # admin creating the task
+
+    if not title or not owner_id or not assigned_to:
+        return jsonify({"msg": "Title, owner_id, and assignedTo are required"}), 400
+
+    # Convert dates to datetime objects if provided
+    from datetime import datetime
+    start_dt = datetime.strptime(start_date, "%Y-%m-%d") if start_date else None
+    due_dt = datetime.strptime(due_date, "%Y-%m-%d") if due_date else None
+
+    new_task = Task(
+        title=title,
+        description=description,
+        start_date=start_dt,
+        due_date=due_dt,
+        assigned_to=assigned_to,
+        priority=priority,
+        owner_id=owner_id,
+        status="pending"  # default status
+    )
+
+    db.session.add(new_task)
+    db.session.commit()
+
+    return jsonify({
+        "id": new_task.id,
+        "title": new_task.title,
+        "description": new_task.description,
+        "startDate": start_dt.strftime("%Y-%m-%d") if start_dt else None,
+        "dueDate": due_dt.strftime("%Y-%m-%d") if due_dt else None,
+        "assignedTo": assigned_to,
+        "priority": priority,
+        "status": new_task.status,
+        "owner_id": owner_id
+    }), 201

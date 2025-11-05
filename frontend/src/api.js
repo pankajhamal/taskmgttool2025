@@ -64,3 +64,8 @@ export const updateUser = async (id, userData) => {
 export const deleteUser = (id) => {
   return axios.delete(`${API_URL}/admin/users/${id}`);
 };
+
+// Create a new task
+export const addTask = async (taskData) => {
+  return axios.post(`${API_URL}/tasks`, taskData, { headers: getAuthHeader() });
+};

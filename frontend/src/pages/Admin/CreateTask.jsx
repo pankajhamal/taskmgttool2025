@@ -1,14 +1,8 @@
-import React, { useState } from "react";
-import { X, Users, Plus, Trash2 } from 'lucide-react'; // Using lucide-react for all icons
+import React, { useState, useEffect } from "react";
+import { X, Users } from 'lucide-react';
+import axios from "axios";
 
-// Dummy data for available members
-const availableMembers = [
-  { id: 'm1', name: 'Alice Smith' },
-  { id: 'm2', name: 'Bob Johnson' },
-  { id: 'm3', name: 'Charlie Brown' },
-  { id: 'm4', name: 'Diana Prince' },
-  { id: 'm5', name: 'Eve Adams' },
-];
+const API_URL = "http://127.0.0.1:5000"; // Flask backend URL
 
 // MemberSelectionModal Component
 const MemberSelectionModal = ({ isOpen, onClose, membersList, assignedMembers, onAssignMember }) => {
@@ -33,7 +27,7 @@ const MemberSelectionModal = ({ isOpen, onClose, membersList, assignedMembers, o
                   className="flex items-center justify-between p-2 rounded-md hover:bg-gray-100 cursor-pointer"
                   onClick={() => onAssignMember(member)}
                 >
-                  <span className="text-gray-800">{member.name}</span>
+                  <span className="text-gray-800">{member.username}</span>
                   {assignedMembers.some(m => m.id === member.id) ? (
                     <span className="text-green-600 font-medium text-sm">Assigned</span>
                   ) : (
@@ -57,109 +51,132 @@ const MemberSelectionModal = ({ isOpen, onClose, membersList, assignedMembers, o
   );
 };
 
-
 const CreateTask = () => {
-  const [checkList, setCheckList] = useState([]);
-  const [newItem, setNewItem] = useState(""); // Changed to string for single item input
-  const [isMemberModalOpen, setIsMemberModalOpen] = useState(false);
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [priority, setPriority] = useState("Low");
+  const [dueDate, setDueDate] = useState("");
   const [assignedMembers, setAssignedMembers] = useState([]);
+  const [membersList, setMembersList] = useState([]);
+  const [isMemberModalOpen, setIsMemberModalOpen] = useState(false);
 
-  const handleAddChecklistItem = (e) => {
-    e.preventDefault(); // Prevent form submission
-    if (newItem.trim() === "") return;
-
-    setCheckList([...checkList, newItem.trim()]);
-    setNewItem("");
-  };
-
-  const handleDeleteChecklistItem = (index) => {
-    const updated = [...checkList];
-    updated.splice(index, 1);
-    setCheckList(updated);
-  };
-
-  const handleOpenMemberModal = () => {
-    setIsMemberModalOpen(true);
-  };
-
-  const handleCloseMemberModal = () => {
-    setIsMemberModalOpen(false);
-  };
+  // Fetch users (filter by role = 'user') for current admin
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        const owner_id = localStorage.getItem("userId");
+        const res = await axios.get(`${API_URL}/admin/users?owner_id=${owner_id}`);
+        // Only include users
+        const users = res.data.filter(u => u.role === "user");
+        setMembersList(users);
+      } catch (err) {
+        console.error("Failed to fetch users:", err);
+      }
+    };
+    fetchUsers();
+  }, []);
 
   const handleAssignMember = (memberToToggle) => {
     setAssignedMembers(prevMembers => {
-      // Check if the member is already assigned
-      const isAssigned = prevMembers.some(member => member.id === memberToToggle.id);
-
+      const isAssigned = prevMembers.some(m => m.id === memberToToggle.id);
       if (isAssigned) {
-        // Remove member if already assigned
-        return prevMembers.filter(member => member.id !== memberToToggle.id);
+        return prevMembers.filter(m => m.id !== memberToToggle.id);
       } else {
-        // Add member if not assigned
         return [...prevMembers, memberToToggle];
       }
     });
   };
 
   const handleRemoveAssignedMember = (memberId) => {
-    setAssignedMembers(prevMembers => prevMembers.filter(member => member.id !== memberId));
+    setAssignedMembers(prevMembers => prevMembers.filter(m => m.id !== memberId));
   };
 
+  const handleCreateTask = () => {
+    if (!title.trim()) {
+      alert("Task title is required");
+      return;
+    }
+
+    const task = {
+      title,
+      description,
+      priority,
+      dueDate,
+      assignedMembers,
+      owner_id: localStorage.getItem("userId")
+    };
+
+    console.log("Task created:", task);
+    alert("Task created successfully!");
+
+    // Reset form
+    setTitle("");
+    setDescription("");
+    setPriority("Low");
+    setDueDate("");
+    setAssignedMembers([]);
+  };
 
   return (
     <div className="p-5 h-180 overflow-auto w-full max-w-3xl bg-white rounded-2xl mx-auto my-4 shadow-lg">
-      <form onSubmit={(e) => e.preventDefault()} className="flex flex-col gap-6"> {/* Prevent default form submission */}
-        <h1 className="font-semibold text-2xl text-gray-800">Create Task</h1>
+      <h1 className="font-semibold text-2xl text-gray-800 mb-4">Create Task</h1>
+
+      <div className="flex flex-col gap-4">
         <div>
-          <h2 className="text-gray-700 text-lg mb-1">Task Title</h2>
+          <label className="text-gray-700 text-lg mb-1">Task Title</label>
           <input
-            className="outline-none border-2 border-gray-300 h-10 p-3 w-full rounded-md focus:border-blue-500 transition-colors"
             type="text"
+            value={title}
+            onChange={e => setTitle(e.target.value)}
+            className="outline-none border-2 border-gray-300 h-10 p-3 w-full rounded-md focus:border-blue-500 transition-colors"
             placeholder="Enter task title"
           />
         </div>
+
         <div>
-          <h2 className="text-gray-700 text-lg mb-1">Description</h2>
+          <label className="text-gray-700 text-lg mb-1">Description</label>
           <textarea
+            value={description}
+            onChange={e => setDescription(e.target.value)}
             className="outline-none border-2 border-gray-300 h-32 p-3 w-full rounded-md resize-y focus:border-blue-500 transition-colors"
             placeholder="Enter task description"
           ></textarea>
         </div>
-        {/* Updated grid layout for Priority, Assign to, and Due Date */}
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* Left column group: Priority and Assign to (stacked) */}
           <div className="flex flex-col gap-4">
             <div>
-              <h2 className="text-gray-700 text-lg mb-1">Priority</h2>
+              <label className="text-gray-700 text-lg mb-1">Priority</label>
               <select
+                value={priority}
+                onChange={e => setPriority(e.target.value)}
                 className="pl-3 h-10 border-2 border-gray-300 outline-none w-full rounded-md focus:border-blue-500 transition-colors"
-                name="priority"
-                id="priority"
               >
                 <option value="Low">Low</option>
                 <option value="Medium">Medium</option>
                 <option value="High">High</option>
               </select>
             </div>
+
             <div>
-              <h2 className="text-gray-700 text-lg mb-1">Assign to</h2>
+              <label className="text-gray-700 text-lg mb-1">Assign to</label>
               <div
-                onClick={handleOpenMemberModal}
+                onClick={() => setIsMemberModalOpen(true)}
                 className="flex gap-2 justify-center items-center pl-3 pr-3 h-10 rounded-md bg-gray-200 text-gray-700 cursor-pointer hover:text-blue-600 hover:bg-blue-100 transition-colors"
               >
                 <Users className="text-xl" /> Add members
               </div>
               {assignedMembers.length > 0 && (
                 <div className="mt-2 flex flex-wrap gap-2">
-                  {assignedMembers.map(member => (
+                  {assignedMembers.map(m => (
                     <span
-                      key={member.id}
+                      key={m.id}
                       className="flex items-center bg-blue-100 text-blue-800 text-sm px-3 py-1 rounded-full"
                     >
-                      {member.name}
+                      {m.username}
                       <button
                         type="button"
-                        onClick={() => handleRemoveAssignedMember(member.id)}
+                        onClick={() => handleRemoveAssignedMember(m.id)}
                         className="ml-2 text-blue-600 hover:text-blue-800"
                       >
                         <X className="w-4 h-4" />
@@ -171,25 +188,30 @@ const CreateTask = () => {
             </div>
           </div>
 
-          {/* Right column: Due Date */}
           <div>
-            <h2 className="text-gray-700 text-lg mb-1">Due Date</h2>
+            <label className="text-gray-700 text-lg mb-1">Due Date</label>
             <input
-              className="pl-3 h-10 border-2 border-gray-300 outline-none w-full rounded-md focus:border-blue-500 transition-colors"
               type="date"
+              value={dueDate}
+              onChange={e => setDueDate(e.target.value)}
+              className="pl-3 h-10 border-2 border-gray-300 outline-none w-full rounded-md focus:border-blue-500 transition-colors"
             />
           </div>
         </div>
-        
-        <button className="w-full bg-indigo-600 h-12 text-white rounded-md font-semibold text-lg hover:bg-indigo-700 transition-colors shadow-md">
+
+        <button
+          type="button"
+          onClick={handleCreateTask}
+          className="w-full bg-indigo-600 h-12 text-white rounded-md font-semibold text-lg hover:bg-indigo-700 transition-colors shadow-md mt-4"
+        >
           Create Task
         </button>
-      </form>
+      </div>
 
       <MemberSelectionModal
         isOpen={isMemberModalOpen}
-        onClose={handleCloseMemberModal}
-        membersList={availableMembers}
+        onClose={() => setIsMemberModalOpen(false)}
+        membersList={membersList}
         assignedMembers={assignedMembers}
         onAssignMember={handleAssignMember}
       />
