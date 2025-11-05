@@ -115,7 +115,7 @@ const loadUsers = async () => {
     });
   } catch (err) {
     console.error("Error adding/updating user:", err);
-    alert("Failed to add/update user. Check console for details.");
+    alert("Duplicate username or email exists. Please use different credentials.");
   }
 };
 
