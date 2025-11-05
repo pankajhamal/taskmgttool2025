@@ -207,7 +207,7 @@ export default function ManageUsers() {
                 <div className="space-y-3 sm:space-y-0 sm:space-x-6 flex flex-col sm:flex-row items-start sm:items-center text-gray-600 text-sm flex-grow sm:flex-grow-0">
                   <div className="flex items-center">
                     <Mail size={16} className="mr-2 text-gray-500" />
-                    <span>{member.email}</span>
+                    <span>{member.email || "No Email"}</span>
                   </div>
                 </div>
 
