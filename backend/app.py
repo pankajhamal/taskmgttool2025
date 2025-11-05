@@ -163,3 +163,15 @@ def update_user(user_id):
     # Commit changes
     db.session.commit()
     return jsonify({"message": "User updated successfully"})
+
+
+# Delete existing user
+@app.route('/admin/users/<int:user_id>', methods=['DELETE'])
+def delete_user(user_id):
+    user = User.query.get(user_id)
+    if not user:
+        return jsonify({"message": "User not found"}), 404
+
+    db.session.delete(user)
+    db.session.commit()
+    return jsonify({"message": "User deleted successfully"}), 200

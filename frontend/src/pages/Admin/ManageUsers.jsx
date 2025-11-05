@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Mail, Pencil, Trash2, Plus, X } from "lucide-react";
-import { fetchUsers, addUser, updateUser } from "../../api";
+import { fetchUsers, addUser, updateUser, deleteUser } from "../../api";
 
 // Generate avatar initials and background color
 const generateAvatarProps = (username) => {
@@ -130,16 +130,16 @@ export default function ManageUsers() {
     setShowForm(true);
   };
 
-  const handleDeleteClick = async (id) => {
-    if (window.confirm("Are you sure you want to delete this member?")) {
-      try {
-        await deleteUser(id);
-        await loadUsers();
-      } catch (err) {
-        console.error("Failed to delete user:", err);
-      }
+ const handleDeleteClick = async (id) => {
+  if (window.confirm("Are you sure you want to delete this member?")) {
+    try {
+      await deleteUser(id);
+      await loadUsers(); // reload list
+    } catch (err) {
+      console.error("Failed to delete user:", err);
     }
-  };
+  }
+};
 
   const handleCloseForm = () => {
     setShowForm(false);

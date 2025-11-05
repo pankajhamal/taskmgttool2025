@@ -49,3 +49,8 @@ export const updateUser = async (id, userData) => {
     },
   });
 };
+
+
+export const deleteUser = (id) => {
+  return axios.delete(`${API_URL}/admin/users/${id}`);
+};
