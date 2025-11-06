@@ -16,7 +16,7 @@ const getPriorityStyles = (priority) => {
   }
 };
 
-const TaskCard = ({ task, membersList = [], onTaskUpdate }) => {
+const TaskCard = ({ task, membersList = [], onTaskUpdate, onDelete }) => {
   const [editingTask, setEditingTask] = useState(false);
   const [isMemberModalOpen, setIsMemberModalOpen] = useState(false);
 
@@ -72,27 +72,23 @@ const TaskCard = ({ task, membersList = [], onTaskUpdate }) => {
     );
   };
 
+  // --------------------------
+  // UPDATED: Save changes handler
+  // --------------------------
   const handleSaveChanges = async () => {
     try {
-      const res = await axios.put(
-        `http://127.0.0.1:5000/tasks/${task.id}`,
-        {
-          title: editTitle,
-          description: editDescription,
-          priority: editPriority,
-          due_date: editDueDate,
-          assigned_to: editAssignedMembers,
-        }
-      );
+      const payload = {
+        title: editTitle,
+        description: editDescription,
+        priority: editPriority,
+        due_date: editDueDate,
+        assignedTo: editAssignedMembers.map((m) => m.name), // send array of names
+      };
+
+      await axios.put(`http://127.0.0.1:5000/tasks/${task.id}`, payload);
 
       if (onTaskUpdate) {
-        onTaskUpdate(task.id, {
-          title: editTitle,
-          description: editDescription,
-          priority: editPriority,
-          due_date: editDueDate,
-          assigned_to: editAssignedMembers.map((m) => m.name),
-        });
+        onTaskUpdate(task.id, payload); // update parent state
       }
 
       setEditingTask(false);
@@ -172,7 +168,6 @@ const TaskCard = ({ task, membersList = [], onTaskUpdate }) => {
           >
             {task.priority.toUpperCase()}
           </span>
-          {/* STATUS */}
           <span
             className={`mt-1 px-2 py-0.5 text-xs font-medium rounded-full ${
               task.status === "done"
@@ -210,7 +205,6 @@ const TaskCard = ({ task, membersList = [], onTaskUpdate }) => {
             className="bg-white rounded-lg shadow-xl relative w-full max-w-md p-6"
           >
             <form onSubmit={(e) => e.preventDefault()} className="flex flex-col gap-6">
-              {/* Header */}
               <div className="flex items-center justify-between">
                 <h1 className="font-semibold text-2xl text-gray-800">Edit Task</h1>
                 <button
@@ -225,7 +219,7 @@ const TaskCard = ({ task, membersList = [], onTaskUpdate }) => {
                 </button>
               </div>
 
-              {/* Title, Description, Priority, Due Date, Members */}
+              {/* Form Fields */}
               <div>
                 <h2 className="text-gray-700 text-lg mb-1">Task Title</h2>
                 <input
@@ -290,9 +284,13 @@ const TaskCard = ({ task, membersList = [], onTaskUpdate }) => {
                 )}
               </div>
 
-              {/* Save & Delete */}
+              {/* Save & Delete Buttons */}
               <div className="flex items-center justify-around gap-2 mt-4">
                 <button
+                  onClick={() => {
+                    onDelete(task.id);
+                    setEditingTask(false);
+                  }}
                   type="button"
                   className="w-full bg-red-600 h-12 text-white rounded-md font-semibold text-lg hover:bg-red-700 transition-colors shadow-md"
                 >

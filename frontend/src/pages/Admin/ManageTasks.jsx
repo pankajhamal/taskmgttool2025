@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import TaskCard from "../../components/TaskCard";
 import axios from "axios";
-import { fetchUsers } from "../../api";
+import { fetchUsers, deleteTask, updateTask } from "../../api";
 
 const API_URL = "http://127.0.0.1:5000"; // Flask backend URL
 
@@ -55,6 +55,47 @@ const handleTaskUpdate = (taskId, updatedTask) => {
     prevTasks.map(t => (t.id === taskId ? { ...t, ...updatedTask } : t))
   );
 };
+
+// Update task handler
+const handleSaveEdit = async (updatedTaskData) => {
+  try {
+    const payload = {
+      ...updatedTaskData,
+      assignedTo: assignedMembers, // pass array of names
+    };
+
+    await updateTask(editingTask.id, payload);
+
+    // Update local tasks state
+    setTasks((prevTasks) =>
+      prevTasks.map((t) =>
+        t.id === editingTask.id ? { ...t, ...payload } : t
+      )
+    );
+
+    setEditModalOpen(false);
+    setEditingTask(null);
+    alert("Task updated successfully!");
+  } catch (error) {
+    console.error("Failed to update task:", error);
+    alert("Failed to update task!");
+  }
+};
+
+
+// Delete task handler
+
+const handleDelete = async (taskId) => {
+    if (!window.confirm("Are you sure you want to delete this task?")) return;
+    try {
+      await deleteTask(taskId);
+      setTasks(tasks.filter(task => task.id !== taskId));
+      alert("Task deleted successfully!");
+    } catch (err) {
+      console.error(err);
+      alert("Failed to delete task.");
+    }
+  };
 
 
   const getFilteredTasks = () => {
@@ -125,6 +166,8 @@ const handleTaskUpdate = (taskId, updatedTask) => {
               membersList={membersList}  // pass fetched users here
               onStatusToggle={() => handleStatusToggle(task.id)}
               onTaskUpdate={handleTaskUpdate} 
+              onDelete= {() => handleDelete(task.id)}
+              onSaveEdit={(updatedData) => handleSaveEdit(task.id, updatedData)} 
             />
           ))
         ) : (

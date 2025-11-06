@@ -78,3 +78,25 @@ export const fetchTasks = async () => {
   const owner_id = localStorage.getItem("userId"); // current admin ID
   return axios.get(`${API_URL}/tasks?owner_id=${owner_id}`, { headers: getAuthHeader() });
 };
+
+// Update existing task
+
+export const updateTask = async (taskId, taskData) => {
+  return axios.put(`${API_URL}/tasks/${taskId}`, taskData, {
+    headers: {
+      ...getAuthHeader(),
+      "Content-Type": "application/json",
+    },
+  });
+};
+
+// Delete a task
+export const deleteTask = async (taskId) => {
+  try {
+    const res = await axios.delete(`${API_URL}/tasks/${taskId}`);
+    return res.data;
+  } catch (err) {
+    console.error("Error deleting task:", err);
+    throw err;
+  }
+};

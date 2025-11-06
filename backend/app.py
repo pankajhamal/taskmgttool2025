@@ -314,13 +314,22 @@ def update_task(task_id):
         except ValueError:
             return jsonify({"msg": "Invalid due_date format"}), 400
 
-    # Update assigned members (as list of names)
-    assigned_members = data.get("assigned_to")
+    assigned_members = data.get("assignedTo")
     if assigned_members is not None:
-        # If frontend sends array of objects [{name: 'user1'}], store as JSON string
-        task.assigned_to = json.dumps(assigned_members)  
+    # Store as string of names like: ['pankaj1', 'kshitiz']
+        task.assigned_to = str(assigned_members)
 
     db.session.commit()
     return jsonify({"msg": "Task updated successfully"})
 
 
+# Delete task
+@app.route('/tasks/<int:task_id>', methods=['DELETE'])
+def delete_task(task_id):
+    task = Task.query.get(task_id)
+    if not task:
+        return jsonify({"msg": "Task not found"}), 404
+
+    db.session.delete(task)
+    db.session.commit()
+    return jsonify({"msg": "Task deleted successfully"}), 200
