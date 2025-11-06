@@ -103,10 +103,13 @@ export const deleteTask = async (taskId) => {
 
 // Fetch dashboard data
 
-// Fetch task counts for dashboard
+// Fetch task counts for dashboard (for the current admin)
 export const fetchTaskCounts = async () => {
   try {
-    const res = await axios.get(`${API_URL}/task-counts`);
+    const adminId = localStorage.getItem("userId"); // Get current admin ID
+    const res = await axios.get(`${API_URL}/task-counts`, {
+      params: { admin_id: adminId },
+    });
     return res.data;
   } catch (error) {
     console.error("Error fetching task counts:", error);
@@ -114,10 +117,13 @@ export const fetchTaskCounts = async () => {
   }
 };
 
-// Fetch admin name
+// Fetch admin name (for the current admin)
 export const fetchAdmin = async () => {
   try {
-    const res = await axios.get("http://127.0.0.1:5000/admin");
+    const adminId = localStorage.getItem("userId"); // Get current admin ID
+    const res = await axios.get(`${API_URL}/admin`, {
+      params: { admin_id: adminId },
+    });
     return res.data; // { name: "Admin Name" }
   } catch (err) {
     console.error("Error fetching admin:", err);

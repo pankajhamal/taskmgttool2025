@@ -339,12 +339,17 @@ def delete_task(task_id):
 # Dashboard stats
 
 # Get task counts
+# Get task counts for a specific admin
 @app.route('/task-counts', methods=['GET'])
 def get_task_counts():
     try:
-        total_tasks = Task.query.count()
-        pending_tasks = Task.query.filter_by(status='Pending').count()
-        completed_tasks = Task.query.filter_by(status='Completed').count()
+        admin_id = request.args.get('admin_id')
+        if not admin_id:
+            return jsonify({"error": "admin_id is required"}), 400
+
+        total_tasks = Task.query.filter_by(owner_id=admin_id).count()
+        pending_tasks = Task.query.filter_by(owner_id=admin_id, status='Pending').count()
+        completed_tasks = Task.query.filter_by(owner_id=admin_id, status='Completed').count()
 
         return jsonify({
             "total_tasks": total_tasks,
@@ -356,11 +361,18 @@ def get_task_counts():
         return jsonify({"error": "Something went wrong"}), 500
 
 
+
 # Get admin name
+# Get admin name for a specific admin
 @app.route("/admin", methods=["GET"])
 def get_admin():
-    # Assuming 'role="admin"' means admin
-    admin_user = User.query.filter_by(role="admin").first()
-    if not admin_user:
+    admin_id = request.args.get('admin_id')
+    if not admin_id:
+        return jsonify({"error": "admin_id is required"}), 400
+
+    admin_user = User.query.get(admin_id)
+    if not admin_user or admin_user.role != "admin":
         return jsonify({"error": "Admin not found"}), 404
+
     return jsonify({"name": admin_user.username})
+
