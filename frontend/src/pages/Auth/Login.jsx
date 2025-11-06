@@ -41,9 +41,9 @@ const Login = () => {
 
       // Redirect based on role
       if (role === "admin") {
-        navigate(`/admin/dashboard/${id}`); // Each admin goes to their own dashboard
+        navigate(`/admin/dashboard`); // Each admin goes to their own dashboard
       } else {
-        navigate(`/user/dashboard/${id}`);
+        navigate(`/user/dashboard`); // Each user goes to their own dashboard
       }
     } catch (err) {
       alert(err.response?.data?.error || "Login failed");
