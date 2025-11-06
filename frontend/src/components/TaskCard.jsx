@@ -146,9 +146,24 @@ const TaskCard = ({ task }) => {
       <div className="grid grid-cols-2 gap-4 text-sm mb-4">
         <div>
           <span className="font-semibold">Due Date: </span>
-          {task.dueDate}
+          {task.due_date}
         </div>
       </div>
+
+      {/* Assigned to */}
+      <div className="grid grid-cols-2 gap-4 text-sm mb-4">
+  <div>
+    <span className="font-semibold">Assigned To: </span>
+    <span className="text-gray-700">
+      {task.assigned_to
+        ? task.assigned_to.replace(/[\[\]']+/g, "")  // remove brackets and single quotes
+        : "No one assigned"
+      }
+    </span>
+  </div>
+</div>
+
+      
 
       {/* Assigned + Status Toggle */}
       <div className="flex justify-between items-center">
@@ -265,7 +280,7 @@ const TaskCard = ({ task }) => {
                   <input
                     className="pl-3 h-10 border-2 border-gray-300 outline-none w-full rounded-md focus:border-blue-500 transition-colors"
                     type="date"
-                    value={task.dueDate}
+                    value={task.deu_date}
                   />
                 </div>
               </div>

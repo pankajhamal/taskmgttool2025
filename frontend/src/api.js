@@ -69,3 +69,9 @@ export const deleteUser = (id) => {
 export const addTask = async (taskData) => {
   return axios.post(`${API_URL}/tasks`, taskData, { headers: getAuthHeader() });
 };
+
+// Fetch tasks for the current admin
+export const fetchTasks = async () => {
+  const owner_id = localStorage.getItem("userId"); // current admin ID
+  return axios.get(`${API_URL}/tasks?owner_id=${owner_id}`, { headers: getAuthHeader() });
+};

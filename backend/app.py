@@ -3,6 +3,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_bcrypt import Bcrypt
 from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity
 from flask_cors import CORS
+from datetime import datetime
 
 app = Flask(__name__)
 
@@ -31,10 +32,13 @@ class User(db.Model):
 class Task(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(150), nullable=False)
-    description = db.Column(db.Text, nullable=True)
-    status = db.Column(db.String(20), default="pending")  # pending, in-progress, done
-    owner_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)  # admin/user owner
-    assigned_to = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)  # assigned user
+    description = db.Column(db.String(500))
+    status = db.Column(db.String(50), default='Pending')
+    priority = db.Column(db.String(50), default='Medium')
+    owner_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
+    assigned_to = db.Column(db.String(100), nullable=False)  # changed to STRING
+    start_date = db.Column(db.DateTime, nullable=True)
+    due_date = db.Column(db.DateTime, nullable=True)
 
 # Create DB
 with app.app_context():
@@ -212,6 +216,7 @@ def delete_user(user_id):
 # Add new task
 @app.route('/tasks', methods=['POST'])
 def add_task():
+
     data = request.get_json()
 
     title = data.get("title")
@@ -226,9 +231,11 @@ def add_task():
         return jsonify({"msg": "Title, owner_id, and assignedTo are required"}), 400
 
     # Convert dates to datetime objects if provided
-    from datetime import datetime
+   
+    assigned_to = str(data.get("assignedTo"))
     start_dt = datetime.strptime(start_date, "%Y-%m-%d") if start_date else None
     due_dt = datetime.strptime(due_date, "%Y-%m-%d") if due_date else None
+
 
     new_task = Task(
         title=title,
@@ -255,3 +262,27 @@ def add_task():
         "status": new_task.status,
         "owner_id": owner_id
     }), 201
+
+
+# Get tasks for a specific admin/user
+@app.route('/tasks', methods=['GET'])
+def get_tasks():
+    owner_id = request.args.get('owner_id')
+    if not owner_id:
+        return jsonify({"msg": "owner_id query param is required"}), 400
+
+    tasks = Task.query.filter_by(owner_id=owner_id).all()
+    task_list = []
+    for t in tasks:
+        task_list.append({
+            "id": t.id,
+            "title": t.title,
+            "description": t.description,
+            "status": t.status,
+            "owner_id": t.owner_id,
+            "due_date": t.due_date.strftime("%Y-%m-%d") if t.due_date else None,
+            "priority": t.priority,  # default if not in DB
+            "assigned_to": t.assigned_to, 
+        })
+    return jsonify(task_list), 200
+

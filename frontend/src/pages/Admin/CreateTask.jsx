@@ -91,22 +91,28 @@ const CreateTask = () => {
     setAssignedMembers(prevMembers => prevMembers.filter(m => m.id !== memberId));
   };
 
-  const handleCreateTask = () => {
-    if (!title.trim()) {
-      alert("Task title is required");
-      return;
-    }
+const handleCreateTask = async () => {
+  if (!title.trim()) {
+    alert("Task title is required");
+    return;
+  }
+  if (assignedMembers.length === 0) {
+    alert("Please assign at least one member");
+    return;
+  }
 
-    const task = {
-      title,
-      description,
-      priority,
-      dueDate,
-      assignedMembers,
-      owner_id: localStorage.getItem("userId")
-    };
+  const task = {
+    title,
+    description,
+    priority,
+    dueDate,
+    assignedTo: assignedMembers.map(m => m.username), // send usernames or IDs depending on backend
+    owner_id: localStorage.getItem("userId")
+  };
 
-    console.log("Task created:", task);
+  try {
+    const res = await axios.post(`${API_URL}/tasks`, task);
+    console.log("Task created:", res.data);
     alert("Task created successfully!");
 
     // Reset form
@@ -115,7 +121,12 @@ const CreateTask = () => {
     setPriority("Low");
     setDueDate("");
     setAssignedMembers([]);
-  };
+  } catch (err) {
+    console.error("Failed to create task:", err);
+    alert("Failed to create task");
+  }
+};
+
 
   return (
     <div className="p-5 h-180 overflow-auto w-full max-w-3xl bg-white rounded-2xl mx-auto my-4 shadow-lg">
