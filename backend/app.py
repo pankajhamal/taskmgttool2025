@@ -4,6 +4,7 @@ from flask_bcrypt import Bcrypt
 from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity
 from flask_cors import CORS
 from datetime import datetime
+import json
 
 app = Flask(__name__)
 
@@ -285,4 +286,41 @@ def get_tasks():
             "assigned_to": t.assigned_to, 
         })
     return jsonify(task_list), 200
+
+
+# Edit task 
+
+@app.route('/tasks/<int:task_id>', methods=['PUT'])
+def update_task(task_id):
+    task = Task.query.get(task_id)
+    if not task:
+        return jsonify({"msg": "Task not found"}), 404
+
+    data = request.get_json()
+    if not data:
+        return jsonify({"msg": "No data provided"}), 400
+
+    # Update basic fields
+    task.title = data.get("title", task.title)
+    task.description = data.get("description", task.description)
+    task.priority = data.get("priority", task.priority)
+    task.status = data.get("status", task.status)  # <-- update status
+
+    # Convert due_date string to Python date object
+    due_date_str = data.get("due_date")
+    if due_date_str:
+        try:
+            task.due_date = datetime.strptime(due_date_str, "%Y-%m-%d").date()
+        except ValueError:
+            return jsonify({"msg": "Invalid due_date format"}), 400
+
+    # Update assigned members (as list of names)
+    assigned_members = data.get("assigned_to")
+    if assigned_members is not None:
+        # If frontend sends array of objects [{name: 'user1'}], store as JSON string
+        task.assigned_to = json.dumps(assigned_members)  
+
+    db.session.commit()
+    return jsonify({"msg": "Task updated successfully"})
+
 

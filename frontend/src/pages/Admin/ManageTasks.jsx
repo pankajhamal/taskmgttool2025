@@ -1,30 +1,61 @@
 import React, { useState, useEffect } from "react";
 import TaskCard from "../../components/TaskCard";
 import axios from "axios";
+import { fetchUsers } from "../../api";
+
+const API_URL = "http://127.0.0.1:5000"; // Flask backend URL
 
 const ManageTasks = () => {
   const [activeTab, setActiveTab] = useState("all");
   const [tasks, setTasks] = useState([]);
+  const [availableMembers, setAvailableMembers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [membersList, setMembersList] = useState([]);
 
-  // Fetch tasks from backend
-  const loadTasks = async () => {
-    try {
-      const ownerId = localStorage.getItem("userId"); // current admin ID
-      const res = await axios.get(`http://127.0.0.1:5000/tasks?owner_id=${ownerId}`);
-      setTasks(res.data);
-      console.log("Tasks loaded from backend:", res.data);
-    } catch (err) {
-      console.error("Failed to fetch tasks from backend:", err);
-      setTasks([]);
-    } finally {
-      setLoading(false);
-    }
-  };
+ const loadData = async () => {
+  try {
+    const ownerId = localStorage.getItem("userId"); // current admin ID
+
+    // Fetch tasks
+    const tasksRes = await axios.get(`http://127.0.0.1:5000/tasks?owner_id=${ownerId}`);
+    setTasks(tasksRes.data);
+    console.log("Tasks loaded from backend:", tasksRes.data);
+    
+  } catch (err) {
+    console.error("Failed to fetch data from backend:", err);
+    setTasks([]);
+  } finally {
+    setLoading(false);
+  }
+};
 
   useEffect(() => {
-    loadTasks();
+    loadData();
   }, []);
+
+  // Fetch users (filter by role = 'user') for current admin
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        const owner_id = localStorage.getItem("userId");
+        const res = await axios.get(`${API_URL}/admin/users?owner_id=${owner_id}`);
+        // Only include users
+        const users = res.data.filter(u => u.role === "user");
+        setMembersList(users);
+      } catch (err) {
+        console.error("Failed to fetch users:", err);
+      }
+    };
+    fetchUsers();
+  }, []);
+
+  
+const handleTaskUpdate = (taskId, updatedTask) => {
+  setTasks(prevTasks =>
+    prevTasks.map(t => (t.id === taskId ? { ...t, ...updatedTask } : t))
+  );
+};
+
 
   const getFilteredTasks = () => {
     if (activeTab === "pending") return tasks.filter((t) => t.status !== "done");
@@ -91,7 +122,9 @@ const ManageTasks = () => {
             <TaskCard
               key={task.id}
               task={task}
+              membersList={membersList}  // pass fetched users here
               onStatusToggle={() => handleStatusToggle(task.id)}
+              onTaskUpdate={handleTaskUpdate} 
             />
           ))
         ) : (

@@ -35,30 +35,37 @@ export default function ManageUsers() {
   });
   const [editingMember, setEditingMember] = useState(null);
 
-  // Helper function to process raw user data
-  const processUsers = (users) => {
-    return users.map((u) => ({
-      id: u.id,
-      username: u.username,
-      email: u.email,
-      role: u.role,
-      password: "••••••••",
-      ...generateAvatarProps(u.username),
-    }));
-  };
+// Helper function to process raw user data
+const processUsers = (users) => {
+  if (!users || !Array.isArray(users)) return []; // Safeguard against undefined or non-array
+  return users.map((u) => ({
+    id: u.id,
+    username: u.username,
+    email: u.email,
+    role: u.role,
+    password: "••••••••",
+    ...generateAvatarProps(u.username),
+  }));
+};
 
-  // Load users from backend
+// Load users from backend
 const loadUsers = async () => {
   try {
-    const ownerId = localStorage.getItem("userId"); // logged-in admin ID
-    const res = await fetchUsers(ownerId);          // pass ownerId to API
-    setTeamMembers(processUsers(res.data));
-    console.log("Users loaded from backend:", res.data);
+    const ownerId = localStorage.getItem("userId");
+    const res = await fetchUsers(ownerId); // returns array directly
+    console.log("API response:", res);
+
+    // res itself is an array of users
+    const usersData = Array.isArray(res) ? res : res.data || [];
+    setTeamMembers(processUsers(usersData));
+
+    console.log("Users loaded from backend:", usersData);
   } catch (err) {
     console.error("Failed to fetch users from backend:", err);
-    setTeamMembers([]); // no dummy data
+    setTeamMembers([]);
   }
 };
+
 
   useEffect(() => {
     loadUsers();

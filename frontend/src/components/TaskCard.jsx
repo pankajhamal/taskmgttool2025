@@ -1,5 +1,6 @@
-import React, { useState } from "react";
-import { X, Users, Plus, Trash2 } from "lucide-react"; // Using lucide-react for all icons
+import React, { useState, useEffect } from "react";
+import { X, Users } from "lucide-react";
+import axios from "axios";
 
 // Utility to style priority badge
 const getPriorityStyles = (priority) => {
@@ -15,55 +16,92 @@ const getPriorityStyles = (priority) => {
   }
 };
 
-//Dummy data later update from database
-
-const availableMembers = [
-  { id: "m1", name: "Alice Smith" },
-  { id: "m2", name: "Bob Johnson" },
-  { id: "m3", name: "Charlie Brown" },
-  { id: "m4", name: "Diana Prince" },
-  { id: "m5", name: "Eve Adams" },
-];
-
-const TaskCard = ({ task }) => {
+const TaskCard = ({ task, membersList = [], onTaskUpdate }) => {
+  const [editingTask, setEditingTask] = useState(false);
   const [isMemberModalOpen, setIsMemberModalOpen] = useState(false);
-  const [assignedMembers, setAssignedMembers] = useState([]);
 
-  const handleOpenMemberModal = () => {
-    setIsMemberModalOpen(true);
-  };
+  const mappedMembersList = membersList.map((u) => ({
+    id: u.id,
+    name: u.username,
+  }));
 
-  const handleCloseMemberModal = () => {
-    setIsMemberModalOpen(false);
-  };
+  const [editTitle, setEditTitle] = useState(task.title);
+  const [editDescription, setEditDescription] = useState(task.description);
+  const [editPriority, setEditPriority] = useState(task.priority);
+  const [editDueDate, setEditDueDate] = useState(task.due_date);
+
+  const [editAssignedMembers, setEditAssignedMembers] = useState(() => {
+    if (!task.assigned_to) return [];
+    let membersArray = [];
+    if (typeof task.assigned_to === "string") {
+      membersArray = task.assigned_to
+        .replace(/[\[\]']+/g, "")
+        .split(",")
+        .map((name, idx) => ({
+          id: `tmp-${idx}`,
+          name: name.trim(),
+        }));
+    } else if (Array.isArray(task.assigned_to)) {
+      membersArray = task.assigned_to.map((name, idx) => ({
+        id: `tmp-${idx}`,
+        name: name,
+      }));
+    }
+    return membersArray;
+  });
+
+  const handleOpenMemberModal = () => setIsMemberModalOpen(true);
+  const handleCloseMemberModal = () => setIsMemberModalOpen(false);
 
   const handleAssignMember = (memberToToggle) => {
-    setAssignedMembers((prevMembers) => {
-      // Check if the member is already assigned
+    setEditAssignedMembers((prevMembers) => {
       const isAssigned = prevMembers.some(
-        (member) => member.id === memberToToggle.id
+        (member) => member.name === memberToToggle.name
       );
-
       if (isAssigned) {
-        // Remove member if already assigned
-        return prevMembers.filter((member) => member.id !== memberToToggle.id);
+        return prevMembers.filter((m) => m.name !== memberToToggle.name);
       } else {
-        // Add member if not assigned
         return [...prevMembers, memberToToggle];
       }
     });
   };
 
   const handleRemoveAssignedMember = (memberId) => {
-    setAssignedMembers((prevMembers) =>
-      prevMembers.filter((member) => member.id !== memberId)
+    setEditAssignedMembers((prev) =>
+      prev.filter((member) => member.id !== memberId)
     );
   };
 
-  //Show the  editing Task card
-  const [editingTask, setEditingTask] = useState(false);
+  const handleSaveChanges = async () => {
+    try {
+      const res = await axios.put(
+        `http://127.0.0.1:5000/tasks/${task.id}`,
+        {
+          title: editTitle,
+          description: editDescription,
+          priority: editPriority,
+          due_date: editDueDate,
+          assigned_to: editAssignedMembers,
+        }
+      );
 
-  // MemberSelectionModal Component
+      if (onTaskUpdate) {
+        onTaskUpdate(task.id, {
+          title: editTitle,
+          description: editDescription,
+          priority: editPriority,
+          due_date: editDueDate,
+          assigned_to: editAssignedMembers.map((m) => m.name),
+        });
+      }
+
+      setEditingTask(false);
+    } catch (err) {
+      console.error("Failed to update task:", err);
+      alert("Failed to update task. Check console for details.");
+    }
+  };
+
   const MemberSelectionModal = ({
     isOpen,
     onClose,
@@ -93,14 +131,12 @@ const TaskCard = ({ task }) => {
                     onClick={() => onAssignMember(member)}
                   >
                     <span className="text-gray-800">{member.name}</span>
-                    {assignedMembers.some((m) => m.id === member.id) ? (
+                    {assignedMembers.some((m) => m.name === member.name) ? (
                       <span className="text-green-600 font-medium text-sm">
                         Assigned
                       </span>
                     ) : (
-                      <span className="text-blue-500 font-medium text-sm">
-                        Add
-                      </span>
+                      <span className="text-blue-500 font-medium text-sm">Add</span>
                     )}
                   </li>
                 ))}
@@ -123,18 +159,28 @@ const TaskCard = ({ task }) => {
   return (
     <div
       onClick={() => setEditingTask(true)}
-      className="bg-white shadow-md rounded-xl cursor-pointer p-5 w-full max-w-2xl mx-auto"
+      className="bg-white shadow-md rounded-xl cursor-pointer p-5 w-full max-w-2xl mx-auto mb-4"
     >
-      {/* Top Row: Title & Actions */}
+      {/* Task Header */}
       <div className="flex justify-between items-start mb-3">
-        <div className=" w-full flex items-center justify-between">
-          <h2 className="text-xl font-bold">{task.title}</h2>
+        <h2 className="text-xl font-bold">{task.title}</h2>
+        <div className="flex gap-2">
           <span
-            className={` mt-1 px-2 py-0.5 text-xs font-medium rounded-full ${getPriorityStyles(
+            className={`mt-1 px-2 py-0.5 text-xs font-medium rounded-full ${getPriorityStyles(
               task.priority
             )}`}
           >
             {task.priority.toUpperCase()}
+          </span>
+          {/* STATUS */}
+          <span
+            className={`mt-1 px-2 py-0.5 text-xs font-medium rounded-full ${
+              task.status === "done"
+                ? "bg-green-100 text-green-700"
+                : "bg-yellow-100 text-yellow-700"
+            }`}
+          >
+            {task.status === "done" ? "Completed" : "Pending"}
           </span>
         </div>
       </div>
@@ -142,160 +188,132 @@ const TaskCard = ({ task }) => {
       {/* Description */}
       <p className="text-gray-700 mb-4">{task.description}</p>
 
-      {/* Dates */}
-      <div className="grid grid-cols-2 gap-4 text-sm mb-4">
-        <div>
-          <span className="font-semibold">Due Date: </span>
-          {task.due_date}
-        </div>
+      {/* Due Date */}
+      <div className="text-sm mb-2">
+        <span className="font-semibold">Due Date: </span>
+        {task.due_date || "No due date"}
       </div>
 
-      {/* Assigned to */}
-      <div className="grid grid-cols-2 gap-4 text-sm mb-4">
-  <div>
-    <span className="font-semibold">Assigned To: </span>
-    <span className="text-gray-700">
-      {task.assigned_to
-        ? task.assigned_to.replace(/[\[\]']+/g, "")  // remove brackets and single quotes
-        : "No one assigned"
-      }
-    </span>
-  </div>
-</div>
-
-      
-
-      {/* Assigned + Status Toggle */}
-      <div className="flex justify-between items-center">
-        <button
-          className={`px-3 py-1 rounded-md text-sm font-semibold shadow ${
-            task.completed
-              ? "bg-green-100 text-green-700"
-              : "bg-yellow-100 text-yellow-700"
-          }`}
-        >
-          {task.completed ? "Completed" : "Pending"}
-        </button>
+      {/* Assigned Members */}
+      <div className="text-sm mb-4">
+        <span className="font-semibold">Assigned To: </span>
+        {editAssignedMembers.length > 0
+          ? editAssignedMembers.map((m) => m.name).join(", ")
+          : "No one assigned"}
       </div>
 
-      {/* For editing the task card component or for looking the details */}
-      {/* This section can be restricted for admin role only  */}
+      {/* Edit Modal */}
       {editingTask && (
         <div className="fixed inset-0 backdrop-blur-xs bg-opacity-40 flex items-center justify-center z-50 p-4">
           <div
-            onClick={() => e.stopPropagation}
+            onClick={(e) => e.stopPropagation()}
             className="bg-white rounded-lg shadow-xl relative w-full max-w-md p-6"
           >
-            <form
-              onSubmit={(e) => e.preventDefault()}
-              className="flex flex-col gap-6"
-            >
-              {" "}
-              {/* Prevent default form submission */}
+            <form onSubmit={(e) => e.preventDefault()} className="flex flex-col gap-6">
+              {/* Header */}
               <div className="flex items-center justify-between">
-                <h1 className="font-semibold text-2xl text-gray-800">
-                  Create Task
-                </h1>
+                <h1 className="font-semibold text-2xl text-gray-800">Edit Task</h1>
                 <button
-                  className="cursor-pointer"
                   type="button"
                   onClick={(e) => {
-                    e.stopPropagation(); //block event bubbling
-                    console.log("Closing...");
+                    e.stopPropagation();
                     setEditingTask(false);
                   }}
+                  className="cursor-pointer"
                 >
                   <X size={24} />
                 </button>
               </div>
+
+              {/* Title, Description, Priority, Due Date, Members */}
               <div>
                 <h2 className="text-gray-700 text-lg mb-1">Task Title</h2>
                 <input
-                  className="outline-none border-2 border-gray-300 h-10 p-3 w-full rounded-md focus:border-blue-500 transition-colors"
                   type="text"
-                  value={task.title}
-                  placeholder="Enter task title"
+                  value={editTitle}
+                  onChange={(e) => setEditTitle(e.target.value)}
+                  className="outline-none border-2 border-gray-300 h-10 p-3 w-full rounded-md focus:border-blue-500 transition-colors"
                 />
-              </div>
-              <div>
-                <h2 className="text-gray-700 text-lg mb-1">Description</h2>
+
+                <h2 className="text-gray-700 text-lg mb-1 mt-4">Description</h2>
                 <textarea
+                  value={editDescription}
+                  onChange={(e) => setEditDescription(e.target.value)}
                   className="outline-none border-2 border-gray-300 h-32 p-3 w-full rounded-md resize-y focus:border-blue-500 transition-colors"
-                  placeholder="Enter task description"
-                  value={task.description}
-                ></textarea>
-              </div>
-              {/* Updated grid layout for Priority, Assign to, and Due Date */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* Left column group: Priority and Assign to (stacked) */}
-                <div className="flex flex-col gap-4">
-                  <div>
-                    <h2 className="text-gray-700 text-lg mb-1">Priority</h2>
-                    <select
-                      className="pl-3 h-10 border-2 border-gray-300 outline-none w-full rounded-md focus:border-blue-500 transition-colors"
-                      name="priority"
-                      id="priority"
-                      value={task.priority}
-                    >
-                      <option value="Low">Low</option>
-                      <option value="Medium">Medium</option>
-                      <option value="High">High</option>
-                    </select>
-                  </div>
-                  <div>
-                    <h2 className="text-gray-700 text-lg mb-1">Assign to</h2>
-                    <div
-                      onClick={handleOpenMemberModal}
-                      className="flex gap-2 justify-center items-center pl-3 pr-3 h-10 rounded-md bg-gray-200 text-gray-700 cursor-pointer hover:text-blue-600 hover:bg-blue-100 transition-colors"
-                    >
-                      <Users className="text-xl" /> Add members
-                    </div>
-                    {assignedMembers.length > 0 && (
-                      <div className="mt-2 flex flex-wrap gap-2">
-                        {assignedMembers.map((member) => (
-                          <span
-                            key={member.id}
-                            className="flex items-center bg-blue-100 text-blue-800 text-sm px-3 py-1 rounded-full"
-                          >
-                            {member.name}
-                            <button
-                              type="button"
-                              onClick={() =>
-                                handleRemoveAssignedMember(member.id)
-                              }
-                              className="ml-2 text-blue-600 hover:text-blue-800"
-                            >
-                              <X className="w-4 h-4" />
-                            </button>
-                          </span>
-                        ))}
-                      </div>
-                    )}
-                  </div>
+                />
+
+                <h2 className="text-gray-700 text-lg mb-1 mt-4">Priority</h2>
+                <select
+                  value={editPriority}
+                  onChange={(e) => setEditPriority(e.target.value)}
+                  className="pl-3 h-10 border-2 border-gray-300 outline-none w-full rounded-md focus:border-blue-500 transition-colors"
+                >
+                  <option value="Low">Low</option>
+                  <option value="Medium">Medium</option>
+                  <option value="High">High</option>
+                </select>
+
+                <h2 className="text-gray-700 text-lg mb-1 mt-4">Due Date</h2>
+                <input
+                  type="date"
+                  value={editDueDate}
+                  onChange={(e) => setEditDueDate(e.target.value)}
+                  className="pl-3 h-10 border-2 border-gray-300 outline-none w-full rounded-md focus:border-blue-500 transition-colors"
+                />
+
+                <h2 className="text-gray-700 text-lg mb-1 mt-4">Assign Members</h2>
+                <div
+                  onClick={handleOpenMemberModal}
+                  className="flex gap-2 justify-center items-center pl-3 pr-3 h-10 rounded-md bg-gray-200 text-gray-700 cursor-pointer hover:text-blue-600 hover:bg-blue-100 transition-colors"
+                >
+                  <Users className="text-xl" /> Add Members
                 </div>
 
-                {/* Right column: Due Date */}
-                <div>
-                  <h2 className="text-gray-700 text-lg mb-1">Due Date</h2>
-                  <input
-                    className="pl-3 h-10 border-2 border-gray-300 outline-none w-full rounded-md focus:border-blue-500 transition-colors"
-                    type="date"
-                    value={task.deu_date}
-                  />
-                </div>
+                {editAssignedMembers.length > 0 && (
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {editAssignedMembers.map((member) => (
+                      <span
+                        key={member.id}
+                        className="flex items-center bg-blue-100 text-blue-800 text-sm px-3 py-1 rounded-full"
+                      >
+                        {member.name}
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveAssignedMember(member.id)}
+                          className="ml-2 text-blue-600 hover:text-blue-800"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                )}
               </div>
-              <div className="flex items-center justify-around gap-2">
-                <button  className="w-full  bg-red-600 h-12 text-white rounded-md font-semibold text-lg hover:bg-red-700 transition-colors shadow-md">Delete</button>
-                <button className="w-full bg-indigo-600 h-12 text-white rounded-md font-semibold text-lg hover:bg-indigo-700 transition-colors shadow-md">
+
+              {/* Save & Delete */}
+              <div className="flex items-center justify-around gap-2 mt-4">
+                <button
+                  type="button"
+                  className="w-full bg-red-600 h-12 text-white rounded-md font-semibold text-lg hover:bg-red-700 transition-colors shadow-md"
+                >
+                  Delete
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSaveChanges}
+                  className="w-full bg-indigo-600 h-12 text-white rounded-md font-semibold text-lg hover:bg-indigo-700 transition-colors shadow-md"
+                >
                   Save Changes
                 </button>
               </div>
             </form>
+
+            {/* Member Modal */}
             <MemberSelectionModal
               isOpen={isMemberModalOpen}
               onClose={handleCloseMemberModal}
-              membersList={availableMembers}
-              assignedMembers={assignedMembers}
+              membersList={mappedMembersList}
+              assignedMembers={editAssignedMembers}
               onAssignMember={handleAssignMember}
             />
           </div>

@@ -31,11 +31,14 @@ const getAuthHeader = () => {
 
 
 // Get all users
+
 export const fetchUsers = async (ownerId) => {
   const url = ownerId 
     ? `${API_URL}/admin/users?owner_id=${ownerId}` 
     : `${API_URL}/admin/users`;
-  return axios.get(url, { headers: getAuthHeader() });
+    
+  const res = await axios.get(url, { headers: getAuthHeader() });
+  return res.data; // return only the array of users
 };
 
 
