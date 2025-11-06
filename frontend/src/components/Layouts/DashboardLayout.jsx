@@ -12,106 +12,47 @@ import {
   Cell,
 } from "recharts";
 import { ListTodo, CheckCircle, Clock, LayoutDashboard } from "lucide-react"; // Icons from lucide-react
+import axios from "axios";
 
-// Main App component
-const App = () => {
-  // State to hold task data
+const DashboardLayout = () => {
+  // State to hold tasks fetched from backend
   const [tasks, setTasks] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  // Simulate fetching data on component mount
+  // Fetch tasks from backend
   useEffect(() => {
-    // Dummy data for tasks
-    const dummyTasks = [
-      {
-        id: "1",
-        title: "Complete project proposal",
-        status: "pending",
-        createdAt: "2025-07-01T10:00:00Z",
-      },
-      {
-        id: "2",
-        title: "Review team's code",
-        status: "completed",
-        createdAt: "2025-07-02T11:30:00Z",
-      },
-      {
-        id: "3",
-        title: "Schedule client meeting",
-        status: "pending",
-        createdAt: "2025-07-03T09:00:00Z",
-      },
-      {
-        id: "4",
-        title: "Prepare presentation slides",
-        status: "pending",
-        createdAt: "2025-07-03T14:00:00Z",
-      },
-      {
-        id: "5",
-        title: "Send follow-up emails",
-        status: "completed",
-        createdAt: "2025-07-04T10:00:00Z",
-      },
-      {
-        id: "6",
-        title: "Update documentation",
-        status: "pending",
-        createdAt: "2025-07-05T16:00:00Z",
-      },
-      {
-        id: "7",
-        title: "Research new technologies",
-        status: "pending",
-        createdAt: "2025-07-06T09:30:00Z",
-      },
-      {
-        id: "8",
-        title: "Plan sprint backlog",
-        status: "completed",
-        createdAt: "2025-07-07T13:00:00Z",
-      },
-      {
-        id: "9",
-        title: "Debug production issue",
-        status: "pending",
-        createdAt: "2025-07-08T10:00:00Z",
-      },
-      {
-        id: "10",
-        title: "Write unit tests",
-        status: "completed",
-        createdAt: "2025-07-09T11:00:00Z",
-      },
-      {
-        id: "11",
-        title: "Refactor old code",
-        status: "pending",
-        createdAt: "2025-07-09T15:00:00Z",
-      },
-      {
-        id: "12",
-        title: "Deploy new feature",
-        status: "pending",
-        createdAt: "2025-07-10T09:00:00Z",
-      },
-    ];
-    setTasks(dummyTasks);
-  }, []);
+  const fetchTasks = async () => {
+    try {
+      const res = await axios.get("http://127.0.0.1:5000/tasks", {
+        params: { owner_id: 1 } // <-- add owner_id here
+      });
+      setTasks(res.data);
+      setLoading(false);
+    } catch (err) {
+      console.error("Error fetching tasks:", err);
+      setLoading(false);
+    }
+  };
+  fetchTasks();
+}, []);
+
+
+  if (loading) {
+    return (
+      <p className="text-center mt-10 text-gray-600">Loading tasks...</p>
+    );
+  }
 
   // Calculate task counts
   const allTasksCount = tasks.length;
-  const pendingTasksCount = tasks.filter(
-    (task) => task.status === "pending"
-  ).length;
-  const completedTasksCount = tasks.filter(
-    (task) => task.status === "completed"
-  ).length;
+  const pendingTasksCount = tasks.filter((task) => task.status === "pending").length;
+  const completedTasksCount = tasks.filter((task) => task.status === "completed").length;
 
   // Prepare data for the bar graph
   const barChartData = [
-    { name: "All Tasks", value: allTasksCount, fill: "#60A5FA" }, // Blue
-    { name: "Pending", value: pendingTasksCount, fill: "#FBBF24" }, // Yellow
-    { name: "Completed", value: completedTasksCount, fill: "#34D399" }, // Green
+    { name: "All Tasks", value: allTasksCount, fill: "#60A5FA" },
+    { name: "Pending", value: pendingTasksCount, fill: "#FBBF24" },
+    { name: "Completed", value: completedTasksCount, fill: "#34D399" },
   ];
 
   // Prepare data for the pie chart (Pending vs. Completed)
@@ -120,10 +61,9 @@ const App = () => {
     { name: "Completed", value: completedTasksCount },
   ];
 
-  // Colors for the pie chart slices
-  const PIE_COLORS = ["#FBBF24", "#34D399"]; // Yellow for pending, Green for completed
+  const PIE_COLORS = ["#FBBF24", "#34D399"];
 
-  // Get recent tasks (e.g., last 5 tasks sorted by creation date)
+  // Get recent tasks (last 5 by createdAt)
   const recentTasks = [...tasks]
     .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
     .slice(0, 5);
@@ -176,9 +116,7 @@ const App = () => {
               <CheckCircle className="w-8 h-8 text-green-600" />
             </div>
             <div>
-              <p className="text-gray-500 text-sm font-medium">
-                Completed Tasks
-              </p>
+              <p className="text-gray-500 text-sm font-medium">Completed Tasks</p>
               <h2 className="text-3xl font-semibold text-gray-900">
                 {completedTasksCount}
               </h2>
@@ -187,7 +125,7 @@ const App = () => {
         </div>
       </div>
 
-      {/* Charts Section - Now in its own grid row, with 2 columns on large screens */}
+      {/* Charts Section */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
         {/* Bar Graph */}
         <div className="bg-white rounded-xl shadow-lg p-6">
@@ -198,23 +136,13 @@ const App = () => {
             <ResponsiveContainer width="100%" height="100%">
               <BarChart
                 data={barChartData}
-                margin={{
-                  top: 20,
-                  right: 30,
-                  left: 20,
-                  bottom: 5,
-                }}
+                margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
               >
                 <XAxis dataKey="name" axisLine={false} tickLine={false} />
                 <YAxis axisLine={false} tickLine={false} />
                 <Tooltip cursor={{ fill: "transparent" }} />
                 <Legend />
-                <Bar
-                  dataKey="value"
-                  barSize={40}
-                  radius={[10, 10, 0, 0]}
-                />{" "}
-                {/* Rounded top corners */}
+                <Bar dataKey="value" barSize={40} radius={[10, 10, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -257,7 +185,7 @@ const App = () => {
         </div>
       </div>
 
-      {/* Recent Tasks Section - Now at the very bottom, full width */}
+      {/* Recent Tasks Section */}
       <div className="bg-white rounded-xl shadow-lg p-6">
         <h3 className="text-xl font-semibold text-gray-800 mb-4">
           Recent Tasks
@@ -275,9 +203,7 @@ const App = () => {
                   ) : (
                     <Clock className="w-5 h-5 text-yellow-500" />
                   )}
-                  <span className="text-gray-700 font-medium">
-                    {task.title}
-                  </span>
+                  <span className="text-gray-700 font-medium">{task.title}</span>
                 </div>
                 <span
                   className={`text-xs font-semibold px-2 py-1 rounded-full ${
@@ -299,4 +225,4 @@ const App = () => {
   );
 };
 
-export default App;
+export default DashboardLayout;

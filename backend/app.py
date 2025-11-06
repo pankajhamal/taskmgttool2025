@@ -6,6 +6,7 @@ from flask_cors import CORS
 from datetime import datetime
 import json
 
+
 app = Flask(__name__)
 
 # Configurations
@@ -333,3 +334,33 @@ def delete_task(task_id):
     db.session.delete(task)
     db.session.commit()
     return jsonify({"msg": "Task deleted successfully"}), 200
+
+
+# Dashboard stats
+
+# Get task counts
+@app.route('/task-counts', methods=['GET'])
+def get_task_counts():
+    try:
+        total_tasks = Task.query.count()
+        pending_tasks = Task.query.filter_by(status='Pending').count()
+        completed_tasks = Task.query.filter_by(status='Completed').count()
+
+        return jsonify({
+            "total_tasks": total_tasks,
+            "pending_tasks": pending_tasks,
+            "completed_tasks": completed_tasks
+        })
+    except Exception as e:
+        print("Error fetching task counts:", e)
+        return jsonify({"error": "Something went wrong"}), 500
+
+
+# Get admin name
+@app.route("/admin", methods=["GET"])
+def get_admin():
+    # Assuming 'role="admin"' means admin
+    admin_user = User.query.filter_by(role="admin").first()
+    if not admin_user:
+        return jsonify({"error": "Admin not found"}), 404
+    return jsonify({"name": admin_user.username})

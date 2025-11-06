@@ -100,3 +100,27 @@ export const deleteTask = async (taskId) => {
     throw err;
   }
 };
+
+// Fetch dashboard data
+
+// Fetch task counts for dashboard
+export const fetchTaskCounts = async () => {
+  try {
+    const res = await axios.get(`${API_URL}/task-counts`);
+    return res.data;
+  } catch (error) {
+    console.error("Error fetching task counts:", error);
+    throw error;
+  }
+};
+
+// Fetch admin name
+export const fetchAdmin = async () => {
+  try {
+    const res = await axios.get("http://127.0.0.1:5000/admin");
+    return res.data; // { name: "Admin Name" }
+  } catch (err) {
+    console.error("Error fetching admin:", err);
+    return { name: "" };
+  }
+};
