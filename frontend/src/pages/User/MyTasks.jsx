@@ -1,58 +1,42 @@
 import React, { useState, useEffect } from "react";
 import TaskCard from "../../components/TaskCard";
-import { fetchUserTasks, updateTaskStatus } from "../../api.js"; // <-- API helper
+import { fetchUserTasks, updateTaskStatus } from "../../api.js";
 
 const MyTasks = () => {
   const [activeTab, setActiveTab] = useState("all");
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  const userId = localStorage.getItem("userId"); // current logged-in user
+  const username = localStorage.getItem("username"); // logged-in user
 
   // Fetch tasks from backend
-useEffect(() => {
-  const loadTasks = async () => {
-    try {
-      const username = localStorage.getItem("username"); // logged-in user
-      const data = await fetchUserTasks(username);
-      setTasks(data);
-    } catch (err) {
-      console.error("Error loading tasks:", err);
-      setTasks([]);
-    } finally {
-      setLoading(false); // ✅ important
-    }
-  };
-  loadTasks();
-}, []);
+  useEffect(() => {
+    const loadTasks = async () => {
+      try {
+        const data = await fetchUserTasks(username);
+        setTasks(data);
+      } catch (err) {
+        console.error("Error loading tasks:", err);
+        setTasks([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadTasks();
+  }, [username]);
 
-
-
-
+  // Filter tasks by tab
   const getFilteredTasks = () => {
     if (activeTab === "pending") return tasks.filter((t) => t.status === "pending");
     if (activeTab === "completed") return tasks.filter((t) => t.status === "completed");
     return tasks;
   };
 
-  // Toggle status between pending <-> completed
-  const handleStatusToggle = async (taskId) => {
-    const task = tasks.find((t) => t.id === taskId);
-    if (!task) return;
-
-    const newStatus = task.status === "completed" ? "pending" : "completed";
-
-    try {
-      // Update backend
-      await updateTaskStatus(taskId, { status: newStatus });
-
-      // Update frontend state
-      setTasks((prev) =>
-        prev.map((t) => (t.id === taskId ? { ...t, status: newStatus } : t))
-      );
-    } catch (err) {
-      console.error("Failed to update task status:", err);
-    }
+  // Callback to update a task's status in state
+  const handleTaskUpdate = (taskId, newStatus) => {
+    setTasks((prev) =>
+      prev.map((t) => (t.id === taskId ? { ...t, status: newStatus } : t))
+    );
   };
 
   if (loading) {
@@ -71,27 +55,21 @@ useEffect(() => {
           onClick={() => setActiveTab("all")}
           className={`${activeTab === "all" ? "text-blue-600" : "hover:text-blue-600"}`}
         >
-          <p>
-            All Task <span>{tasks.length}</span>
-          </p>
+          All Task <span>{tasks.length}</span>
         </button>
 
         <button
           onClick={() => setActiveTab("pending")}
           className={`${activeTab === "pending" ? "text-blue-600" : "hover:text-blue-600"}`}
         >
-          <p>
-            Pending <span>{tasks.filter((task) => task.status === "pending").length}</span>
-          </p>
+          Pending <span>{tasks.filter((task) => task.status === "pending").length}</span>
         </button>
 
         <button
           onClick={() => setActiveTab("completed")}
           className={`${activeTab === "completed" ? "text-blue-600" : "hover:text-blue-600"}`}
         >
-          <p>
-            Completed <span>{tasks.filter((task) => task.status === "completed").length}</span>
-          </p>
+          Completed <span>{tasks.filter((task) => task.status === "completed").length}</span>
         </button>
 
         <button className="h-9 pl-2 pr-2 mb-2 bg-blue-500 shadow-lg shadow-blue-500/50 rounded-xl text-white text-[17px]">
@@ -105,7 +83,10 @@ useEffect(() => {
           <TaskCard
             key={task.id}
             task={task}
-            onStatusToggle={() => handleStatusToggle(task.id)}
+            onTaskUpdate={handleTaskUpdate} // ← updated callback
+            onDelete={() =>
+              setTasks((prev) => prev.filter((t) => t.id !== task.id))
+            }
             isUser={true}
             isAdmin={false}
           />

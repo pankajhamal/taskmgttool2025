@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { X, Users } from "lucide-react";
+import { updateTaskStatus } from "../api.js";
 import axios from "axios";
 
 // Utility to style priority badge
@@ -16,15 +17,11 @@ const getPriorityStyles = (priority) => {
   }
 };
 
-const TaskCard = ({
-  task,
-  membersList = [],
-  onTaskUpdate,
-  onDelete,
-  isUser = false, // <-- new prop to identify normal user
-}) => {
+const TaskCard = ({ task, membersList = [], onTaskUpdate, onDelete }) => {
   const [editingTask, setEditingTask] = useState(false);
   const [isMemberModalOpen, setIsMemberModalOpen] = useState(false);
+
+  const role = localStorage.getItem("role"); // "admin" or "user"
 
   const mappedMembersList = membersList.map((u) => ({
     id: u.id,
@@ -158,7 +155,7 @@ const TaskCard = ({
   return (
     <div
       onClick={() => {
-        if (!isUser) setEditingTask(true); // only admin can open modal
+        if (role === "admin") setEditingTask(true); // only admin opens edit modal
       }}
       className="bg-white shadow-md rounded-xl cursor-pointer p-5 w-full max-w-2xl mx-auto mb-4"
     >
@@ -175,22 +172,35 @@ const TaskCard = ({
           </span>
 
           {/* Status badge */}
-          <span
-            onClick={(e) => {
-              e.stopPropagation(); // prevent card click
-              if (isUser && onTaskUpdate) {
-                const newStatus = task.status === "done" ? "pending" : "done";
-                onTaskUpdate(task.id, { status: newStatus });
-              }
-            }}
-            className={`mt-1 px-2 py-0.5 text-xs font-medium rounded-full cursor-pointer ${
-              task.status === "done"
-                ? "bg-green-100 text-green-700"
-                : "bg-yellow-100 text-yellow-700"
-            }`}
-          >
-            {task.status === "done" ? "Completed" : "Pending"}
-          </span>
+          {/* Status badge */}
+<span
+  onClick={async (e) => {
+    e.stopPropagation(); // prevent card click
+    if (role !== "user") return; // only users can toggle status
+
+    const newStatus = task.status === "pending" ? "completed" : "pending";
+
+    try {
+      // Call API
+      await updateTaskStatus(task.id, newStatus);
+
+      // Notify parent to update its state
+      if (onTaskUpdate) {
+        onTaskUpdate(task.id, newStatus);
+      }
+    } catch (err) {
+      console.error("Failed to update status:", err);
+    }
+  }}
+  className={`mt-1 px-2 py-0.5 text-xs font-medium rounded-full cursor-pointer ${
+    task.status === "completed"
+      ? "bg-green-100 text-green-700"
+      : "bg-yellow-100 text-yellow-700 hover:bg-yellow-200"
+  }`}
+>
+  {task.status === "completed" ? "Completed" : "Pending"}
+</span>
+
         </div>
       </div>
 
@@ -210,6 +220,7 @@ const TaskCard = ({
           ? editAssignedMembers.map((m) => m.name).join(", ")
           : "No one assigned"}
       </div>
+
 
       {/* Edit Modal */}
       {editingTask && (

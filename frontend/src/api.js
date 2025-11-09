@@ -141,17 +141,21 @@ export const fetchUserTasks = async (username) => {
 };
 
 
-// Update task status
+// Update task status (user-only)
 export const updateTaskStatus = async (taskId, status) => {
   try {
-    const res = await axios.put(`${API_URL}/tasks/${taskId}`, { status }, {
-      headers: {
-        "Content-Type": "application/json",
-      },
-    });
+    const res = await axios.put(`${API_URL}/tasks/${taskId}/status`, 
+      { status }, 
+      {
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    );
     return res.data;
   } catch (err) {
     console.error("Error updating task status:", err);
     throw err;
   }
 };
+

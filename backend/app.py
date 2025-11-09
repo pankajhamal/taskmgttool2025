@@ -409,3 +409,27 @@ def get_user_tasks():
 
     return jsonify(user_tasks), 200
 
+
+# Update task status for user
+@app.route('/tasks/<int:task_id>/status', methods=['PUT'])
+def update_task_status(task_id):
+    """
+    Only update the status of a task to 'pending' or 'complete'. For logged-in users.
+    """
+    task = Task.query.get(task_id)
+    if not task:
+        return jsonify({"msg": "Task not found"}), 404
+
+    data = request.get_json()
+    new_status = data.get("status")
+    
+    if new_status not in ["pending", "completed"]:
+        return jsonify({"msg": "Invalid status. Must be 'pending' or 'completed'."}), 400
+
+    task.status = new_status
+    db.session.commit()
+
+    return jsonify({
+        "id": task.id,
+        "status": task.status
+    }), 200
