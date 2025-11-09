@@ -168,6 +168,8 @@ const handleDelete = async (taskId) => {
               onTaskUpdate={handleTaskUpdate} 
               onDelete= {() => handleDelete(task.id)}
               onSaveEdit={(updatedData) => handleSaveEdit(task.id, updatedData)} 
+              isAdmin={true}
+              isUser={false}
             />
           ))
         ) : (

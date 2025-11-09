@@ -130,3 +130,28 @@ export const fetchAdmin = async () => {
     return { name: "" };
   }
 };
+
+
+// Fetch tasks assigned to a specific user
+export const fetchUserTasks = async (username) => {
+  const res = await axios.get(`${API_URL}/user/tasks`, {
+    params: { username }, // must match backend
+  });
+  return res.data;
+};
+
+
+// Update task status
+export const updateTaskStatus = async (taskId, status) => {
+  try {
+    const res = await axios.put(`${API_URL}/tasks/${taskId}`, { status }, {
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+    return res.data;
+  } catch (err) {
+    console.error("Error updating task status:", err);
+    throw err;
+  }
+};

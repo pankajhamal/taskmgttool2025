@@ -1,103 +1,63 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import TaskCard from "../../components/TaskCard";
-
-
-//later update from database
-const initialTasks = [
-  {
-    id: 1,
-    title: "Design Website",
-    description: "Design a responsive marketing website for product launch.",
-    startDate: "2025-06-25",
-    dueDate: "2025-07-05",
-    totalSubtasks: 5,
-    completedSubtasks: 2,
-    assignedTo: "Pankaj Hamal",
-    completed: false,
-    priority: "High",
-  },
-  {
-    id: 2,
-    title: "API Integration",
-    description: "Connect frontend to Flask backend.",
-    startDate: "2025-06-20",
-    dueDate: "2025-07-01",
-    totalSubtasks: 3,
-    completedSubtasks: 3,
-    assignedTo: "Kshitiz Rawal",
-    completed: true,
-    priority: "Medium",
-  },
-
-  {
-    id: 3,
-    title: "API Integration",
-    description: "Connect frontend to Flask backend.",
-    startDate: "2025-06-20",
-    dueDate: "2025-07-01",
-    totalSubtasks: 3,
-    completedSubtasks: 3,
-    assignedTo: "Kshitiz Rawal",
-    completed: true,
-    priority: "Medium",
-  },
-  {
-    id: 4,
-    title: "API Integration",
-    description: "Connect frontend to Flask backend.",
-    startDate: "2025-06-20",
-    dueDate: "2025-07-01",
-    totalSubtasks: 3,
-    completedSubtasks: 3,
-    assignedTo: "Kshitiz Rawal",
-    completed: true,
-    priority: "Medium",
-  },
-   {
-    id: 5,
-    title: "Design Website",
-    description: "Design a responsive marketing website for product launch.",
-    startDate: "2025-06-25",
-    dueDate: "2025-07-05",
-    totalSubtasks: 5,
-    completedSubtasks: 2,
-    assignedTo: "Pankaj Hamal",
-    completed: false,
-    priority: "High",
-  },
-   {
-    id: 6,
-    title: "Design Website",
-    description: "Design a responsive marketing website for product launch.",
-    startDate: "2025-06-25",
-    dueDate: "2025-07-05",
-    totalSubtasks: 5,
-    completedSubtasks: 2,
-    assignedTo: "Pankaj Hamal",
-    completed: false,
-    priority: "High",
-  },
-  
-
-];
+import { fetchUserTasks, updateTaskStatus } from "../../api.js"; // <-- API helper
 
 const MyTasks = () => {
   const [activeTab, setActiveTab] = useState("all");
-  const [tasks, setTasks] = useState(initialTasks);
+  const [tasks, setTasks] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  const userId = localStorage.getItem("userId"); // current logged-in user
+
+  // Fetch tasks from backend
+useEffect(() => {
+  const loadTasks = async () => {
+    try {
+      const username = localStorage.getItem("username"); // logged-in user
+      const data = await fetchUserTasks(username);
+      setTasks(data);
+    } catch (err) {
+      console.error("Error loading tasks:", err);
+      setTasks([]);
+    } finally {
+      setLoading(false); // ✅ important
+    }
+  };
+  loadTasks();
+}, []);
+
+
+
 
   const getFilteredTasks = () => {
-    if (activeTab === "pending") return tasks.filter((t) => !t.completed);
-    if (activeTab === "completed") return tasks.filter((t) => t.completed);
+    if (activeTab === "pending") return tasks.filter((t) => t.status === "pending");
+    if (activeTab === "completed") return tasks.filter((t) => t.status === "completed");
     return tasks;
   };
 
-  const handleStatusToggle = (taskId) => {
-    setTasks((prev) =>
-      prev.map((task) =>
-        task.id === taskId ? { ...task, completed: !task.completed } : task
-      )
-    );
+  // Toggle status between pending <-> completed
+  const handleStatusToggle = async (taskId) => {
+    const task = tasks.find((t) => t.id === taskId);
+    if (!task) return;
+
+    const newStatus = task.status === "completed" ? "pending" : "completed";
+
+    try {
+      // Update backend
+      await updateTaskStatus(taskId, { status: newStatus });
+
+      // Update frontend state
+      setTasks((prev) =>
+        prev.map((t) => (t.id === taskId ? { ...t, status: newStatus } : t))
+      );
+    } catch (err) {
+      console.error("Failed to update task status:", err);
+    }
   };
+
+  if (loading) {
+    return <p className="text-center mt-10 text-gray-600">Loading tasks...</p>;
+  }
 
   return (
     <div className="flex flex-col p-5 gap-5 bg-gray-100 h-190 overflow-auto">
@@ -109,9 +69,7 @@ const MyTasks = () => {
       <div className="flex justify-end gap-10 border-b-2 text-xl text-gray-600 h-10">
         <button
           onClick={() => setActiveTab("all")}
-          className={`${
-            activeTab === "all" ? "text-blue-600" : "hover:text-blue-600"
-          }`}
+          className={`${activeTab === "all" ? "text-blue-600" : "hover:text-blue-600"}`}
         >
           <p>
             All Task <span>{tasks.length}</span>
@@ -120,29 +78,23 @@ const MyTasks = () => {
 
         <button
           onClick={() => setActiveTab("pending")}
-          className={`${
-            activeTab === "pending" ? "text-blue-600" : "hover:text-blue-600"
-          }`}
+          className={`${activeTab === "pending" ? "text-blue-600" : "hover:text-blue-600"}`}
         >
           <p>
-            Pending{" "}
-            <span>{tasks.filter((task) => !task.completed).length}</span>
+            Pending <span>{tasks.filter((task) => task.status === "pending").length}</span>
           </p>
         </button>
 
         <button
           onClick={() => setActiveTab("completed")}
-          className={`${
-            activeTab === "completed" ? "text-blue-600" : "hover:text-blue-600"
-          }`}
+          className={`${activeTab === "completed" ? "text-blue-600" : "hover:text-blue-600"}`}
         >
           <p>
-            Completed{" "}
-            <span>{tasks.filter((task) => task.completed).length}</span>
+            Completed <span>{tasks.filter((task) => task.status === "completed").length}</span>
           </p>
         </button>
 
-        <button className="h-9 pl-2 pr-2 mb-2 bg-blue-500 shadow-lg shadow-blue-500/50 rounded-xl text-white text-[17px] ">
+        <button className="h-9 pl-2 pr-2 mb-2 bg-blue-500 shadow-lg shadow-blue-500/50 rounded-xl text-white text-[17px]">
           Download Report
         </button>
       </div>
@@ -153,6 +105,9 @@ const MyTasks = () => {
           <TaskCard
             key={task.id}
             task={task}
+            onStatusToggle={() => handleStatusToggle(task.id)}
+            isUser={true}
+            isAdmin={false}
           />
         ))}
       </div>

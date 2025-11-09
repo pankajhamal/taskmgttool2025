@@ -38,6 +38,7 @@ const Login = () => {
       localStorage.setItem("token", access_token);
       localStorage.setItem("role", role);
       localStorage.setItem("userId", id);
+      localStorage.setItem("username", username);  // username
 
       // Redirect based on role
       if (role === "admin") {

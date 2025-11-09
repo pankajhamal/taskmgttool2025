@@ -5,6 +5,8 @@ from flask_jwt_extended import JWTManager, create_access_token, jwt_required, ge
 from flask_cors import CORS
 from datetime import datetime
 import json
+# User specific tasks
+import ast  # for converting string to list
 
 
 app = Flask(__name__)
@@ -375,4 +377,35 @@ def get_admin():
         return jsonify({"error": "Admin not found"}), 404
 
     return jsonify({"name": admin_user.username})
+
+
+
+@app.route('/user/tasks', methods=['GET'])
+def get_user_tasks():
+    username = request.args.get("username")
+    if not username:
+        return jsonify({"msg": "Username is required"}), 400
+
+    tasks = Task.query.all()  # get all tasks
+    user_tasks = []
+
+    for t in tasks:
+        try:
+            assigned_list = ast.literal_eval(t.assigned_to)  # convert string to list
+        except:
+            assigned_list = []
+
+        if username in assigned_list:
+            user_tasks.append({
+                "id": t.id,
+                "title": t.title,
+                "description": t.description,
+                "status": t.status,
+                "assigned_to": assigned_list,
+                "priority": t.priority if hasattr(t, "priority") else "Low",  # <-- add priority
+                "start_date": t.start_date if hasattr(t, "start_date") else None,
+                "due_date": t.due_date.strftime("%Y-%m-%d") if t.due_date else None
+            })
+
+    return jsonify(user_tasks), 200
 

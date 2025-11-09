@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { X, Users } from "lucide-react";
 import axios from "axios";
 
 // Utility to style priority badge
 const getPriorityStyles = (priority) => {
-  switch (priority.toLowerCase()) {
+  switch ((priority || "").toLowerCase()) {
     case "high":
       return "bg-red-100 text-red-700";
     case "medium":
@@ -16,7 +16,13 @@ const getPriorityStyles = (priority) => {
   }
 };
 
-const TaskCard = ({ task, membersList = [], onTaskUpdate, onDelete }) => {
+const TaskCard = ({
+  task,
+  membersList = [],
+  onTaskUpdate,
+  onDelete,
+  isUser = false, // <-- new prop to identify normal user
+}) => {
   const [editingTask, setEditingTask] = useState(false);
   const [isMemberModalOpen, setIsMemberModalOpen] = useState(false);
 
@@ -72,9 +78,6 @@ const TaskCard = ({ task, membersList = [], onTaskUpdate, onDelete }) => {
     );
   };
 
-  // --------------------------
-  // UPDATED: Save changes handler
-  // --------------------------
   const handleSaveChanges = async () => {
     try {
       const payload = {
@@ -82,13 +85,13 @@ const TaskCard = ({ task, membersList = [], onTaskUpdate, onDelete }) => {
         description: editDescription,
         priority: editPriority,
         due_date: editDueDate,
-        assignedTo: editAssignedMembers.map((m) => m.name), // send array of names
+        assignedTo: editAssignedMembers.map((m) => m.name),
       };
 
       await axios.put(`http://127.0.0.1:5000/tasks/${task.id}`, payload);
 
       if (onTaskUpdate) {
-        onTaskUpdate(task.id, payload); // update parent state
+        onTaskUpdate(task.id, payload);
       }
 
       setEditingTask(false);
@@ -154,7 +157,9 @@ const TaskCard = ({ task, membersList = [], onTaskUpdate, onDelete }) => {
 
   return (
     <div
-      onClick={() => setEditingTask(true)}
+      onClick={() => {
+        if (!isUser) setEditingTask(true); // only admin can open modal
+      }}
       className="bg-white shadow-md rounded-xl cursor-pointer p-5 w-full max-w-2xl mx-auto mb-4"
     >
       {/* Task Header */}
@@ -166,10 +171,19 @@ const TaskCard = ({ task, membersList = [], onTaskUpdate, onDelete }) => {
               task.priority
             )}`}
           >
-            {task.priority.toUpperCase()}
+            {(task.priority || "").toUpperCase()}
           </span>
+
+          {/* Status badge */}
           <span
-            className={`mt-1 px-2 py-0.5 text-xs font-medium rounded-full ${
+            onClick={(e) => {
+              e.stopPropagation(); // prevent card click
+              if (isUser && onTaskUpdate) {
+                const newStatus = task.status === "done" ? "pending" : "done";
+                onTaskUpdate(task.id, { status: newStatus });
+              }
+            }}
+            className={`mt-1 px-2 py-0.5 text-xs font-medium rounded-full cursor-pointer ${
               task.status === "done"
                 ? "bg-green-100 text-green-700"
                 : "bg-yellow-100 text-yellow-700"
