@@ -10,7 +10,7 @@ import ManageUsers from "./pages/Admin/ManageUsers.jsx";
 
 import UserDashboard from "./pages/User/UserDashboard.jsx";
 import MyTasks from "./pages/User/MyTasks.jsx";
-import ViewTaskDetails from "./pages/User/ViewTaskDetails.jsx";
+
 
 import PrivateRoute from "./routes/PrivateRoutes.jsx"; // renamed file
 import DashboardLayout from "./components/Layouts/DashboardLayout.jsx";
@@ -53,7 +53,6 @@ const App = () => {
         >
           <Route path="dashboard" element={<UserDashboardLayout />} />
           <Route path="my-tasks" element={<MyTasks />} />
-          <Route path="task-details/:id" element={<ViewTaskDetails />} />
         </Route>
       </Routes>
     </Router>

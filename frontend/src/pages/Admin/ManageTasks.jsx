@@ -2,6 +2,9 @@ import React, { useState, useEffect } from "react";
 import TaskCard from "../../components/TaskCard";
 import axios from "axios";
 import { fetchUsers, deleteTask, updateTask } from "../../api";
+import * as XLSX from "xlsx";
+import { saveAs } from "file-saver";
+
 
 const API_URL = "http://127.0.0.1:5000"; // Flask backend URL
 
@@ -120,6 +123,58 @@ const handleDelete = async (taskId) => {
     }
   };
 
+  // Function to download Excel report
+ const handleDownloadReport = () => {
+  if (tasks.length === 0) {
+    alert("No tasks available to export!");
+    return;
+  }
+
+  // Prepare worksheet data
+  const formattedData = tasks.map((task, index) => {
+    let assignedNames = [];
+
+    if (task.assigned_to) {
+      if (Array.isArray(task.assigned_to)) {
+        // Array of objects or strings
+        assignedNames = task.assigned_to.map((a) => (a.name ? a.name : a));
+      } else if (typeof task.assigned_to === "string") {
+        try {
+          // Convert string like "['pankaj1']" to array
+          assignedNames = JSON.parse(task.assigned_to.replace(/'/g, '"'));
+        } catch (err) {
+          assignedNames = [task.assigned_to];
+        }
+      }
+    }
+
+    return {
+      "S.N.": index + 1,
+      "Title": task.title,
+      "Description": task.description,
+      "Status": task.status,
+      "Priority": task.priority || "N/A",
+      "Assigned To": assignedNames.join(", "),
+      "Due Date": task.due_date || "N/A",
+    };
+  });
+
+  // Create a worksheet
+  const worksheet = XLSX.utils.json_to_sheet(formattedData);
+
+  // Create a workbook and add the worksheet
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, worksheet, "Tasks Report");
+
+  // Generate Excel file and trigger download
+  const excelBuffer = XLSX.write(workbook, { bookType: "xlsx", type: "array" });
+  const blob = new Blob([excelBuffer], { type: "application/octet-stream" });
+
+  saveAs(blob, `Tasks_Report_${new Date().toISOString().slice(0, 10)}.xlsx`);
+};
+
+
+
   if (loading) return <p className="p-5 text-gray-700">Loading tasks...</p>;
 
   return (
@@ -151,7 +206,9 @@ const handleDelete = async (taskId) => {
           Completed <span>{tasks.filter(t => t.status === "done").length}</span>
         </button>
 
-        <button className="h-9 pl-2 pr-2 mb-2 bg-blue-500 shadow-lg shadow-blue-500/50 rounded-xl text-white text-[17px]">
+        <button 
+        onClick={handleDownloadReport}
+        className="h-9 pl-2 pr-2 mb-2 bg-blue-500 shadow-lg shadow-blue-500/50 rounded-xl text-white text-[17px]">
           Download Report
         </button>
       </div>
