@@ -2,10 +2,9 @@ import React from "react";
 import { FaTasks } from "react-icons/fa";
 
 const Navbar = () => {
-  // Get username from localStorage
+  
   const username = localStorage.getItem("username") || "User";
 
-  // Generate initials (first two letters)
   const initials = username
     .split(" ")
     .map((n) => n[0])
