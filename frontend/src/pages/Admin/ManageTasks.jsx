@@ -1,98 +1,88 @@
 import React, { useState, useEffect } from "react";
 import TaskCard from "../../components/TaskCard";
 import axios from "axios";
-import { fetchUsers, deleteTask, updateTask } from "../../api";
+import { deleteTask, updateTask } from "../../api";
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
-
 
 const API_URL = "http://127.0.0.1:5000"; // Flask backend URL
 
 const ManageTasks = () => {
   const [activeTab, setActiveTab] = useState("all");
   const [tasks, setTasks] = useState([]);
-  const [availableMembers, setAvailableMembers] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [membersList, setMembersList] = useState([]);
+  const [loading, setLoading] = useState(true);
 
- const loadData = async () => {
-  try {
-    const ownerId = localStorage.getItem("userId"); // current admin ID
+  const ownerId = localStorage.getItem("userId"); // current admin ID
 
-    // Fetch tasks
-    const tasksRes = await axios.get(`http://127.0.0.1:5000/tasks?owner_id=${ownerId}`);
-    setTasks(tasksRes.data);
-    console.log("Tasks loaded from backend:", tasksRes.data);
-    
-  } catch (err) {
-    console.error("Failed to fetch data from backend:", err);
-    setTasks([]);
-  } finally {
-    setLoading(false);
-  }
-};
+  // Fetch tasks from backend
+  const loadTasks = async () => {
+    try {
+      const res = await axios.get(`${API_URL}/tasks?owner_id=${ownerId}`);
+      setTasks(res.data);
+      console.log("Tasks loaded:", res.data);
+    } catch (err) {
+      console.error("Failed to fetch tasks:", err);
+      setTasks([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Fetch users (role = "user") for current admin
+  const loadUsers = async () => {
+    try {
+      const res = await axios.get(`${API_URL}/admin/users?owner_id=${ownerId}`);
+      const users = res.data.filter(u => u.role === "user");
+      setMembersList(users);
+    } catch (err) {
+      console.error("Failed to fetch users:", err);
+    }
+  };
 
   useEffect(() => {
-    loadData();
+    loadTasks();
+    loadUsers();
   }, []);
 
-  // Fetch users (filter by role = 'user') for current admin
-  useEffect(() => {
-    const fetchUsers = async () => {
-      try {
-        const owner_id = localStorage.getItem("userId");
-        const res = await axios.get(`${API_URL}/admin/users?owner_id=${owner_id}`);
-        // Only include users
-        const users = res.data.filter(u => u.role === "user");
-        setMembersList(users);
-      } catch (err) {
-        console.error("Failed to fetch users:", err);
-      }
-    };
-    fetchUsers();
-  }, []);
+  // Filter tasks by tab
+  const getFilteredTasks = () => {
+    if (activeTab === "pending") return tasks.filter(t => t.status === "pending");
+    if (activeTab === "completed") return tasks.filter(t => t.status === "completed");
+    return tasks;
+  };
 
-  
-const handleTaskUpdate = (taskId, updatedTask) => {
-  setTasks(prevTasks =>
-    prevTasks.map(t => (t.id === taskId ? { ...t, ...updatedTask } : t))
-  );
-};
+  // Toggle task status
+  const handleStatusToggle = async (taskId) => {
+    const task = tasks.find(t => t.id === taskId);
+    if (!task) return;
 
-// Update task handler
-const handleSaveEdit = async (updatedTaskData) => {
-  try {
-    const payload = {
-      ...updatedTaskData,
-      assignedTo: assignedMembers, // pass array of names
-    };
+    const newStatus = task.status === "completed" ? "pending" : "completed";
 
-    await updateTask(editingTask.id, payload);
+    try {
+      await axios.put(`${API_URL}/tasks/${taskId}`, { status: newStatus });
+      setTasks(prev =>
+        prev.map(t => (t.id === taskId ? { ...t, status: newStatus } : t))
+      );
+    } catch (err) {
+      console.error("Failed to update task status:", err);
+    }
+  };
 
-    // Update local tasks state
-    setTasks((prevTasks) =>
-      prevTasks.map((t) =>
-        t.id === editingTask.id ? { ...t, ...payload } : t
-      )
+  // Update task locally
+  const handleTaskUpdate = (taskId, updatedTask) => {
+    setTasks(prev =>
+      prev.map(t => (t.id === taskId ? { ...t, ...updatedTask } : t))
     );
+  };
 
-    setEditModalOpen(false);
-    setEditingTask(null);
-    alert("Task updated successfully!");
-  } catch (error) {
-    console.error("Failed to update task:", error);
-    alert("Failed to update task!");
-  }
-};
-
-
-// Delete task handler
-
-const handleDelete = async (taskId) => {
+  // Delete task
+  const handleDelete = async (taskId) => {
     if (!window.confirm("Are you sure you want to delete this task?")) return;
+
     try {
       await deleteTask(taskId);
-      setTasks(tasks.filter(task => task.id !== taskId));
+      setTasks(prev => prev.filter(t => t.id !== taskId));
       alert("Task deleted successfully!");
     } catch (err) {
       console.error(err);
@@ -100,80 +90,47 @@ const handleDelete = async (taskId) => {
     }
   };
 
-
-  const getFilteredTasks = () => {
-    if (activeTab === "pending") return tasks.filter((t) => t.status !== "done");
-    if (activeTab === "completed") return tasks.filter((t) => t.status === "done");
-    return tasks;
-  };
-
-  const handleStatusToggle = async (taskId) => {
-    const task = tasks.find(t => t.id === taskId);
-    if (!task) return;
-
-    const newStatus = task.status === "done" ? "pending" : "done";
-
-    try {
-      await axios.put(`http://127.0.0.1:5000/tasks/${taskId}`, { status: newStatus });
-      setTasks(prev =>
-        prev.map(t => t.id === taskId ? { ...t, status: newStatus } : t)
-      );
-    } catch (err) {
-      console.error("Failed to update task status:", err);
+  // Download Excel report
+  const handleDownloadReport = () => {
+    if (tasks.length === 0) {
+      alert("No tasks available to export!");
+      return;
     }
-  };
 
-  // Function to download Excel report
- const handleDownloadReport = () => {
-  if (tasks.length === 0) {
-    alert("No tasks available to export!");
-    return;
-  }
+    const formattedData = tasks.map((task, index) => {
+      let assignedNames = [];
 
-  // Prepare worksheet data
-  const formattedData = tasks.map((task, index) => {
-    let assignedNames = [];
-
-    if (task.assigned_to) {
-      if (Array.isArray(task.assigned_to)) {
-        // Array of objects or strings
-        assignedNames = task.assigned_to.map((a) => (a.name ? a.name : a));
-      } else if (typeof task.assigned_to === "string") {
-        try {
-          // Convert string like "['pankaj1']" to array
-          assignedNames = JSON.parse(task.assigned_to.replace(/'/g, '"'));
-        } catch (err) {
-          assignedNames = [task.assigned_to];
+      if (task.assigned_to) {
+        if (Array.isArray(task.assigned_to)) {
+          assignedNames = task.assigned_to.map(a => (a.name ? a.name : a));
+        } else if (typeof task.assigned_to === "string") {
+          try {
+            assignedNames = JSON.parse(task.assigned_to.replace(/'/g, '"'));
+          } catch {
+            assignedNames = [task.assigned_to];
+          }
         }
       }
-    }
 
-    return {
-      "S.N.": index + 1,
-      "Title": task.title,
-      "Description": task.description,
-      "Status": task.status,
-      "Priority": task.priority || "N/A",
-      "Assigned To": assignedNames.join(", "),
-      "Due Date": task.due_date || "N/A",
-    };
-  });
+      return {
+        "S.N.": index + 1,
+        "Title": task.title,
+        "Description": task.description,
+        "Status": task.status,
+        "Priority": task.priority || "N/A",
+        "Assigned To": assignedNames.join(", "),
+        "Due Date": task.due_date || "N/A",
+      };
+    });
 
-  // Create a worksheet
-  const worksheet = XLSX.utils.json_to_sheet(formattedData);
+    const worksheet = XLSX.utils.json_to_sheet(formattedData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Tasks Report");
 
-  // Create a workbook and add the worksheet
-  const workbook = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(workbook, worksheet, "Tasks Report");
-
-  // Generate Excel file and trigger download
-  const excelBuffer = XLSX.write(workbook, { bookType: "xlsx", type: "array" });
-  const blob = new Blob([excelBuffer], { type: "application/octet-stream" });
-
-  saveAs(blob, `Tasks_Report_${new Date().toISOString().slice(0, 10)}.xlsx`);
-};
-
-
+    const excelBuffer = XLSX.write(workbook, { bookType: "xlsx", type: "array" });
+    const blob = new Blob([excelBuffer], { type: "application/octet-stream" });
+    saveAs(blob, `Tasks_Report_${new Date().toISOString().slice(0, 10)}.xlsx`);
+  };
 
   if (loading) return <p className="p-5 text-gray-700">Loading tasks...</p>;
 
@@ -196,19 +153,20 @@ const handleDelete = async (taskId) => {
           onClick={() => setActiveTab("pending")}
           className={`${activeTab === "pending" ? "text-blue-600" : "hover:text-blue-600"}`}
         >
-          Pending <span>{tasks.filter(t => t.status !== "done").length}</span>
+          Pending <span>{tasks.filter(t => t.status === "pending").length}</span>
         </button>
 
         <button
           onClick={() => setActiveTab("completed")}
           className={`${activeTab === "completed" ? "text-blue-600" : "hover:text-blue-600"}`}
         >
-          Completed <span>{tasks.filter(t => t.status === "done").length}</span>
+          Completed <span>{tasks.filter(t => t.status === "completed").length}</span>
         </button>
 
-        <button 
-        onClick={handleDownloadReport}
-        className="h-9 pl-2 pr-2 mb-2 bg-blue-500 shadow-lg shadow-blue-500/50 rounded-xl text-white text-[17px]">
+        <button
+          onClick={handleDownloadReport}
+          className="h-9 pl-2 pr-2 mb-2 bg-blue-500 shadow-lg shadow-blue-500/50 rounded-xl text-white text-[17px]"
+        >
           Download Report
         </button>
       </div>
@@ -220,11 +178,10 @@ const handleDelete = async (taskId) => {
             <TaskCard
               key={task.id}
               task={task}
-              membersList={membersList}  // pass fetched users here
+              membersList={membersList}
               onStatusToggle={() => handleStatusToggle(task.id)}
-              onTaskUpdate={handleTaskUpdate} 
-              onDelete= {() => handleDelete(task.id)}
-              onSaveEdit={(updatedData) => handleSaveEdit(task.id, updatedData)} 
+              onTaskUpdate={handleTaskUpdate}
+              onDelete={() => handleDelete(task.id)}
               isAdmin={true}
               isUser={false}
             />
