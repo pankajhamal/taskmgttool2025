@@ -26,6 +26,7 @@ const App = () => {
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<SignUp />} />
         <Route path="/unauthorized" element={<Unauthorized />} />
+        <Route path="*" element={<Login />} /> {/* fallback */}
 
         {/* Admin Routes */}
         <Route
