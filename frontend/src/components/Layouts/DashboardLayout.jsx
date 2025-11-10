@@ -43,8 +43,12 @@ const DashboardLayout = () => {
 
   // Calculate task counts dynamically
   const allTasksCount = tasks.length;
-  const pendingTasksCount = tasks.filter((task) => task.status === "pending").length;
-  const completedTasksCount = tasks.filter((task) => task.status === "completed").length;
+  const pendingTasksCount = tasks.filter(
+    (task) => task.status === "pending"
+  ).length;
+  const completedTasksCount = tasks.filter(
+    (task) => task.status === "completed"
+  ).length;
 
   // Prepare data for charts
   const barChartData = [
@@ -84,7 +88,9 @@ const DashboardLayout = () => {
             </div>
             <div>
               <p className="text-gray-500 text-sm font-medium">All Tasks</p>
-              <h2 className="text-3xl font-semibold text-gray-900">{allTasksCount}</h2>
+              <h2 className="text-3xl font-semibold text-gray-900">
+                {allTasksCount}
+              </h2>
             </div>
           </div>
         </div>
@@ -97,7 +103,9 @@ const DashboardLayout = () => {
             </div>
             <div>
               <p className="text-gray-500 text-sm font-medium">Pending Tasks</p>
-              <h2 className="text-3xl font-semibold text-gray-900">{pendingTasksCount}</h2>
+              <h2 className="text-3xl font-semibold text-gray-900">
+                {pendingTasksCount}
+              </h2>
             </div>
           </div>
         </div>
@@ -109,8 +117,12 @@ const DashboardLayout = () => {
               <CheckCircle className="w-8 h-8 text-green-600" />
             </div>
             <div>
-              <p className="text-gray-500 text-sm font-medium">Completed Tasks</p>
-              <h2 className="text-3xl font-semibold text-gray-900">{completedTasksCount}</h2>
+              <p className="text-gray-500 text-sm font-medium">
+                Completed Tasks
+              </p>
+              <h2 className="text-3xl font-semibold text-gray-900">
+                {completedTasksCount}
+              </h2>
             </div>
           </div>
         </div>
@@ -120,15 +132,21 @@ const DashboardLayout = () => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
         {/* Bar Chart */}
         <div className="bg-white rounded-xl shadow-lg p-6">
-          <h3 className="text-xl font-semibold text-gray-800 mb-4">Task Status Overview</h3>
+          <h3 className="text-xl font-semibold text-gray-800 mb-4">
+            Task Status Overview
+          </h3>
           <div className="w-full h-80">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={barChartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-                <XAxis dataKey="name" axisLine={false} tickLine={false} />
-                <YAxis axisLine={false} tickLine={false} />
-                <Tooltip cursor={{ fill: "transparent" }} />
+              <BarChart
+                data={barChartData}
+                margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+              >
+                <XAxis dataKey="name" />
+                <YAxis />
+                <Tooltip />
                 <Legend />
-                <Bar dataKey="value" barSize={40} radius={[10, 10, 0, 0]} />
+
+                <Bar dataKey="value" barSize={75} radius={[10, 10, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -136,7 +154,9 @@ const DashboardLayout = () => {
 
         {/* Pie Chart */}
         <div className="bg-white rounded-xl shadow-lg p-6">
-          <h3 className="text-xl font-semibold text-gray-800 mb-4">Pending vs. Completed</h3>
+          <h3 className="text-xl font-semibold text-gray-800 mb-4">
+            Pending vs. Completed
+          </h3>
           <div className="w-full h-80">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
@@ -149,11 +169,16 @@ const DashboardLayout = () => {
                   fill="#8884d8"
                   paddingAngle={5}
                   dataKey="value"
-                  label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                  label={({ name, percent }) =>
+                    `${name} ${(percent * 100).toFixed(0)}%`
+                  }
                   labelLine={false}
                 >
                   {pieChartData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} />
+                    <Cell
+                      key={`cell-${index}`}
+                      fill={PIE_COLORS[index % PIE_COLORS.length]}
+                    />
                   ))}
                 </Pie>
                 <Tooltip />
@@ -166,7 +191,9 @@ const DashboardLayout = () => {
 
       {/* Recent Tasks */}
       <div className="bg-white rounded-xl shadow-lg p-6">
-        <h3 className="text-xl font-semibold text-gray-800 mb-4">Recent Tasks</h3>
+        <h3 className="text-xl font-semibold text-gray-800 mb-4">
+          Recent Tasks
+        </h3>
         {recentTasks.length > 0 ? (
           <ul className="space-y-3">
             {recentTasks.map((task) => (
@@ -180,7 +207,9 @@ const DashboardLayout = () => {
                   ) : (
                     <Clock className="w-5 h-5 text-yellow-500" />
                   )}
-                  <span className="text-gray-700 font-medium">{task.title}</span>
+                  <span className="text-gray-700 font-medium">
+                    {task.title}
+                  </span>
                 </div>
                 <span
                   className={`text-xs font-semibold px-2 py-1 rounded-full ${

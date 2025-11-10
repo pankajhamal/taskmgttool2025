@@ -11,94 +11,37 @@ import {
   Pie,
   Cell,
 } from "recharts";
-import { ListTodo, CheckCircle, Clock, LayoutDashboard } from "lucide-react"; // Icons from lucide-react
+import { ListTodo, CheckCircle, Clock, LayoutDashboard } from "lucide-react";
+import { fetchUserTasks } from "../../api"; // ✅ import from your api.js
 
-// Main App component
-const App = () => {
-  // State to hold task data
+const UserDashboard = () => {
   const [tasks, setTasks] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  // Simulate fetching data on component mount
+  const username = localStorage.getItem("username"); // get logged-in user
+
   useEffect(() => {
-    // Dummy data for tasks
-    const dummyTasks = [
-      {
-        id: "1",
-        title: "Complete project proposal",
-        status: "pending",
-        createdAt: "2025-07-01T10:00:00Z",
-      },
-      {
-        id: "2",
-        title: "Review team's code",
-        status: "completed",
-        createdAt: "2025-07-02T11:30:00Z",
-      },
-      {
-        id: "3",
-        title: "Schedule client meeting",
-        status: "pending",
-        createdAt: "2025-07-03T09:00:00Z",
-      },
-      {
-        id: "4",
-        title: "Prepare presentation slides",
-        status: "pending",
-        createdAt: "2025-07-03T14:00:00Z",
-      },
-      {
-        id: "5",
-        title: "Send follow-up emails",
-        status: "completed",
-        createdAt: "2025-07-04T10:00:00Z",
-      },
-      {
-        id: "6",
-        title: "Update documentation",
-        status: "pending",
-        createdAt: "2025-07-05T16:00:00Z",
-      },
-      {
-        id: "7",
-        title: "Research new technologies",
-        status: "pending",
-        createdAt: "2025-07-06T09:30:00Z",
-      },
-      {
-        id: "8",
-        title: "Plan sprint backlog",
-        status: "completed",
-        createdAt: "2025-07-07T13:00:00Z",
-      },
-      {
-        id: "9",
-        title: "Debug production issue",
-        status: "pending",
-        createdAt: "2025-07-08T10:00:00Z",
-      },
-      {
-        id: "10",
-        title: "Write unit tests",
-        status: "completed",
-        createdAt: "2025-07-09T11:00:00Z",
-      },
-      {
-        id: "11",
-        title: "Refactor old code",
-        status: "pending",
-        createdAt: "2025-07-09T15:00:00Z",
-      },
-      {
-        id: "12",
-        title: "Deploy new feature",
-        status: "pending",
-        createdAt: "2025-07-10T09:00:00Z",
-      },
-    ];
-    setTasks(dummyTasks);
-  }, []);
+    const loadTasks = async () => {
+      try {
+        const data = await fetchUserTasks(username); // ✅ fetch from backend
+        setTasks(data);
+      } catch (err) {
+        console.error("Error fetching user tasks:", err);
+        setTasks([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadTasks();
+  }, [username]);
 
-  // Calculate task counts
+  if (loading) {
+    return (
+      <p className="text-center mt-10 text-gray-600">Loading dashboard...</p>
+    );
+  }
+
+  // ✅ Calculate task summary
   const allTasksCount = tasks.length;
   const pendingTasksCount = tasks.filter(
     (task) => task.status === "pending"
@@ -107,25 +50,28 @@ const App = () => {
     (task) => task.status === "completed"
   ).length;
 
-  // Prepare data for the bar graph
+  // ✅ Bar chart data
   const barChartData = [
-    { name: "All Tasks", value: allTasksCount, fill: "#60A5FA" }, // Blue
-    { name: "Pending", value: pendingTasksCount, fill: "#FBBF24" }, // Yellow
-    { name: "Completed", value: completedTasksCount, fill: "#34D399" }, // Green
+    { name: "All Tasks", value: allTasksCount, fill: "#60A5FA" },
+    { name: "Pending", value: pendingTasksCount, fill: "#FBBF24" },
+    { name: "Completed", value: completedTasksCount, fill: "#34D399" },
   ];
 
-  // Prepare data for the pie chart (Pending vs. Completed)
+  // ✅ Pie chart data
   const pieChartData = [
     { name: "Pending", value: pendingTasksCount },
     { name: "Completed", value: completedTasksCount },
   ];
 
-  // Colors for the pie chart slices
-  const PIE_COLORS = ["#FBBF24", "#34D399"]; // Yellow for pending, Green for completed
+  const PIE_COLORS = ["#FBBF24", "#34D399"];
 
-  // Get recent tasks (e.g., last 5 tasks sorted by creation date)
+  // ✅ Recent tasks (latest 5 by due_date if exists)
   const recentTasks = [...tasks]
-    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+    .sort(
+      (a, b) =>
+        new Date(b.due_date || b.createdAt) -
+        new Date(a.due_date || a.createdAt)
+    )
     .slice(0, 5);
 
   return (
@@ -139,57 +85,32 @@ const App = () => {
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-        {/* All Tasks Card */}
-        <div className="bg-white rounded-xl shadow-lg p-6 flex items-center justify-between transform transition duration-300 hover:scale-105 hover:shadow-xl">
-          <div className="flex items-center">
-            <div className="p-3 bg-indigo-100 rounded-full mr-4">
-              <ListTodo className="w-8 h-8 text-indigo-600" />
-            </div>
-            <div>
-              <p className="text-gray-500 text-sm font-medium">All Tasks</p>
-              <h2 className="text-3xl font-semibold text-gray-900">
-                {allTasksCount}
-              </h2>
-            </div>
-          </div>
-        </div>
-
-        {/* Pending Tasks Card */}
-        <div className="bg-white rounded-xl shadow-lg p-6 flex items-center justify-between transform transition duration-300 hover:scale-105 hover:shadow-xl">
-          <div className="flex items-center">
-            <div className="p-3 bg-yellow-100 rounded-full mr-4">
-              <Clock className="w-8 h-8 text-yellow-600" />
-            </div>
-            <div>
-              <p className="text-gray-500 text-sm font-medium">Pending Tasks</p>
-              <h2 className="text-3xl font-semibold text-gray-900">
-                {pendingTasksCount}
-              </h2>
-            </div>
-          </div>
-        </div>
-
-        {/* Completed Tasks Card */}
-        <div className="bg-white rounded-xl shadow-lg p-6 flex items-center justify-between transform transition duration-300 hover:scale-105 hover:shadow-xl">
-          <div className="flex items-center">
-            <div className="p-3 bg-green-100 rounded-full mr-4">
-              <CheckCircle className="w-8 h-8 text-green-600" />
-            </div>
-            <div>
-              <p className="text-gray-500 text-sm font-medium">
-                Completed Tasks
-              </p>
-              <h2 className="text-3xl font-semibold text-gray-900">
-                {completedTasksCount}
-              </h2>
-            </div>
-          </div>
-        </div>
+        {/* All Tasks */}
+        <SummaryCard
+          title="All Tasks"
+          count={allTasksCount}
+          icon={<ListTodo className="w-8 h-8 text-indigo-600" />}
+          bgColor="bg-indigo-100"
+        />
+        {/* Pending */}
+        <SummaryCard
+          title="Pending Tasks"
+          count={pendingTasksCount}
+          icon={<Clock className="w-8 h-8 text-yellow-600" />}
+          bgColor="bg-yellow-100"
+        />
+        {/* Completed */}
+        <SummaryCard
+          title="Completed Tasks"
+          count={completedTasksCount}
+          icon={<CheckCircle className="w-8 h-8 text-green-600" />}
+          bgColor="bg-green-100"
+        />
       </div>
 
-      {/* Charts Section - Now in its own grid row, with 2 columns on large screens */}
+      {/* Charts Section */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-        {/* Bar Graph */}
+        {/* Bar Chart */}
         <div className="bg-white rounded-xl shadow-lg p-6">
           <h3 className="text-xl font-semibold text-gray-800 mb-4">
             Task Status Overview
@@ -198,23 +119,13 @@ const App = () => {
             <ResponsiveContainer width="100%" height="100%">
               <BarChart
                 data={barChartData}
-                margin={{
-                  top: 20,
-                  right: 30,
-                  left: 20,
-                  bottom: 5,
-                }}
+                margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
               >
-                <XAxis dataKey="name" axisLine={false} tickLine={false} />
-                <YAxis axisLine={false} tickLine={false} />
-                <Tooltip cursor={{ fill: "transparent" }} />
+                <XAxis dataKey="name" />
+                <YAxis />
+                <Tooltip />
                 <Legend />
-                <Bar
-                  dataKey="value"
-                  barSize={40}
-                  radius={[10, 10, 0, 0]}
-                />{" "}
-                {/* Rounded top corners */}
+                <Bar dataKey="value" barSize={75} radius={[10, 10, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -223,7 +134,7 @@ const App = () => {
         {/* Pie Chart */}
         <div className="bg-white rounded-xl shadow-lg p-6">
           <h3 className="text-xl font-semibold text-gray-800 mb-4">
-            Pending vs. Completed
+            Pending vs Completed
           </h3>
           <div className="w-full h-80">
             <ResponsiveContainer width="100%" height="100%">
@@ -234,7 +145,6 @@ const App = () => {
                   cy="50%"
                   innerRadius={60}
                   outerRadius={90}
-                  fill="#8884d8"
                   paddingAngle={5}
                   dataKey="value"
                   labelLine={false}
@@ -257,7 +167,7 @@ const App = () => {
         </div>
       </div>
 
-      {/* Recent Tasks Section - Now at the very bottom, full width */}
+      {/* Recent Tasks */}
       <div className="bg-white rounded-xl shadow-lg p-6">
         <h3 className="text-xl font-semibold text-gray-800 mb-4">
           Recent Tasks
@@ -299,4 +209,17 @@ const App = () => {
   );
 };
 
-export default App;
+// ✅ Small reusable card component
+const SummaryCard = ({ title, count, icon, bgColor }) => (
+  <div className="bg-white rounded-xl shadow-lg p-6 flex items-center justify-between hover:scale-105 transition-transform">
+    <div className="flex items-center">
+      <div className={`p-3 ${bgColor} rounded-full mr-4`}>{icon}</div>
+      <div>
+        <p className="text-gray-500 text-sm font-medium">{title}</p>
+        <h2 className="text-3xl font-semibold text-gray-900">{count}</h2>
+      </div>
+    </div>
+  </div>
+);
+
+export default UserDashboard;

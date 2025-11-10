@@ -379,7 +379,7 @@ def get_admin():
     return jsonify({"name": admin_user.username})
 
 
-
+# Get tasks assigned to a specific user
 @app.route('/user/tasks', methods=['GET'])
 def get_user_tasks():
     username = request.args.get("username")
