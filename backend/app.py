@@ -5,8 +5,7 @@ from flask_jwt_extended import JWTManager, create_access_token, jwt_required, ge
 from flask_cors import CORS
 from datetime import datetime
 import json
-# User specific tasks
-import ast  # for converting string to list
+import ast  
 
 
 app = Flask(__name__)
@@ -14,22 +13,21 @@ app = Flask(__name__)
 # Configurations
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config['JWT_SECRET_KEY'] = 'your-secret-key'  # Change this to a strong secret
+app.config['JWT_SECRET_KEY'] = 'your-secret-key'
 
 # Initialize extensions
 db = SQLAlchemy(app)
 bcrypt = Bcrypt(app)
 jwt = JWTManager(app)
-CORS(app, supports_credentials=True, resources={r"/*": {"origins": "http://localhost:5173"}})
+CORS(app, supports_credentials=True)
 
 # User model
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True, nullable=False)
     password = db.Column(db.String(120), nullable=False)
-    email = db.Column(db.String(120), unique=True, nullable=False)  # <-- Add this line
-    role = db.Column(db.String(10), nullable=False, default="admin")  # remove default
-    # New field — points to the admin that owns this user
+    email = db.Column(db.String(120), unique=True, nullable=False)  
+    role = db.Column(db.String(10), nullable=False, default="admin") 
     owner_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
 
 # Task model
@@ -40,7 +38,7 @@ class Task(db.Model):
     status = db.Column(db.String(50), default='Pending')
     priority = db.Column(db.String(50), default='Medium')
     owner_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
-    assigned_to = db.Column(db.String(100), nullable=False)  # changed to STRING
+    assigned_to = db.Column(db.String(100), nullable=False) 
     start_date = db.Column(db.DateTime, nullable=True)
     due_date = db.Column(db.DateTime, nullable=True)
 
@@ -63,7 +61,7 @@ def signup():
 
     hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
 
-    # ✅ top-level admin has no owner
+    #top-level admin has no owner
     new_user = User(username=username, password=hashed_password, email=email, role='admin', owner_id=None)
     
     db.session.add(new_user)
@@ -91,15 +89,13 @@ def login():
     if not bcrypt.check_password_hash(user.password, password):
         return jsonify({'error': 'Invalid password'}), 401
 
-    # Create JWT token
     access_token = create_access_token(identity={'id': user.id, 'username': user.username, 'role': user.role})
     
-    # Return id explicitly so frontend can use it
     return jsonify({
         "message": "Login successful",
         "access_token": access_token,
         "role": user.role,
-        "id": user.id   # <-- Add this
+        "id": user.id  
     }), 200
 
 
