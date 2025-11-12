@@ -213,7 +213,6 @@ def delete_user(user_id):
 
 ######## Create Task ######################################
 # Add new task
-# Add new task
 @app.route('/tasks', methods=['POST'])
 def add_task():
 
@@ -221,17 +220,17 @@ def add_task():
 
     title = data.get("title")
     description = data.get("description")
-    start_date = data.get("startDate")  # optional, format: YYYY-MM-DD
-    due_date = data.get("dueDate")      # optional, format: YYYY-MM-DD
-    assigned_to = data.get("assignedTo") # username or user_id
-    priority = data.get("priority", "Medium")  # default to Medium
-    owner_id = data.get("owner_id")     # admin creating the task
+    start_date = data.get("startDate")  
+    due_date = data.get("dueDate")     
+    assigned_to = data.get("assignedTo") 
+    priority = data.get("priority", "Medium")  
+    owner_id = data.get("owner_id")     
 
     if not title or not owner_id or not assigned_to:
         return jsonify({"msg": "Title, owner_id, and assignedTo are required"}), 400
 
     # Convert dates to datetime objects if provided
-   
+
     assigned_to = str(data.get("assignedTo"))
     start_dt = datetime.strptime(start_date, "%Y-%m-%d") if start_date else None
     due_dt = datetime.strptime(due_date, "%Y-%m-%d") if due_date else None
@@ -336,7 +335,6 @@ def delete_task(task_id):
 
 # Dashboard stats
 
-# Get task counts
 # Get task counts for a specific admin
 @app.route('/task-counts', methods=['GET'])
 def get_task_counts():
@@ -360,7 +358,6 @@ def get_task_counts():
 
 
 
-# Get admin name
 # Get admin name for a specific admin
 @app.route("/admin", methods=["GET"])
 def get_admin():
@@ -387,7 +384,7 @@ def get_user_tasks():
 
     for t in tasks:
         try:
-            assigned_list = ast.literal_eval(t.assigned_to)  # convert string to list
+            assigned_list = ast.literal_eval(t.assigned_to)  
         except:
             assigned_list = []
 
@@ -398,7 +395,7 @@ def get_user_tasks():
                 "description": t.description,
                 "status": t.status,
                 "assigned_to": assigned_list,
-                "priority": t.priority if hasattr(t, "priority") else "Low",  # <-- add priority
+                "priority": t.priority if hasattr(t, "priority") else "Low",  
                 "start_date": t.start_date if hasattr(t, "start_date") else None,
                 "due_date": t.due_date.strftime("%Y-%m-%d") if t.due_date else None
             })

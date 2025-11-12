@@ -12,7 +12,7 @@ import {
   Cell,
 } from "recharts";
 import { ListTodo, CheckCircle, Clock, LayoutDashboard } from "lucide-react";
-import { fetchUserTasks } from "../../api"; // ✅ import from your api.js
+import { fetchUserTasks } from "../../api"; // import from your api.js
 
 const UserDashboard = () => {
   const [tasks, setTasks] = useState([]);
@@ -23,7 +23,7 @@ const UserDashboard = () => {
   useEffect(() => {
     const loadTasks = async () => {
       try {
-        const data = await fetchUserTasks(username); // ✅ fetch from backend
+        const data = await fetchUserTasks(username); // fetch from backend
         setTasks(data);
       } catch (err) {
         console.error("Error fetching user tasks:", err);
@@ -41,7 +41,7 @@ const UserDashboard = () => {
     );
   }
 
-  // ✅ Calculate task summary
+  // Calculate task summary
   const allTasksCount = tasks.length;
   const pendingTasksCount = tasks.filter(
     (task) => task.status === "pending"
@@ -50,14 +50,14 @@ const UserDashboard = () => {
     (task) => task.status === "completed"
   ).length;
 
-  // ✅ Bar chart data
+  // Bar chart data
   const barChartData = [
     { name: "All Tasks", value: allTasksCount, fill: "#60A5FA" },
     { name: "Pending", value: pendingTasksCount, fill: "#FBBF24" },
     { name: "Completed", value: completedTasksCount, fill: "#34D399" },
   ];
 
-  // ✅ Pie chart data
+  // Pie chart data
   const pieChartData = [
     { name: "Pending", value: pendingTasksCount },
     { name: "Completed", value: completedTasksCount },
@@ -65,7 +65,7 @@ const UserDashboard = () => {
 
   const PIE_COLORS = ["#FBBF24", "#34D399"];
 
-  // ✅ Recent tasks (latest 5 by due_date if exists)
+  // Recent tasks (latest 5 by due_date if exists)
   const recentTasks = [...tasks]
     .sort(
       (a, b) =>
@@ -209,7 +209,7 @@ const UserDashboard = () => {
   );
 };
 
-// ✅ Small reusable card component
+// Small reusable card component
 const SummaryCard = ({ title, count, icon, bgColor }) => (
   <div className="bg-white rounded-xl shadow-lg p-6 flex items-center justify-between hover:scale-105 transition-transform">
     <div className="flex items-center">

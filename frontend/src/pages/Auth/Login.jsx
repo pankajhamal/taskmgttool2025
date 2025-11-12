@@ -38,13 +38,13 @@ const Login = () => {
       localStorage.setItem("token", access_token);
       localStorage.setItem("role", role);
       localStorage.setItem("userId", id);
-      localStorage.setItem("username", username);  // username
+      localStorage.setItem("username", username); 
 
       // Redirect based on role
       if (role === "admin") {
-        navigate(`/admin/dashboard`); // Each admin goes to their own dashboard
+        navigate(`/admin/dashboard`); 
       } else {
-        navigate(`/user/dashboard`); // Each user goes to their own dashboard
+        navigate(`/user/dashboard`);
       }
     } catch (err) {
       alert(err.response?.data?.error || "Login failed");

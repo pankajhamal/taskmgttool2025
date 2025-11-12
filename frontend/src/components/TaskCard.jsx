@@ -21,7 +21,7 @@ const TaskCard = ({ task, membersList = [], onTaskUpdate, onDelete }) => {
   const [editingTask, setEditingTask] = useState(false);
   const [isMemberModalOpen, setIsMemberModalOpen] = useState(false);
 
-  const role = localStorage.getItem("role"); // "admin" or "user"
+  const role = localStorage.getItem("role"); 
 
   const mappedMembersList = membersList.map((u) => ({
     id: u.id,
@@ -172,7 +172,7 @@ const TaskCard = ({ task, membersList = [], onTaskUpdate, onDelete }) => {
           </span>
 
           {/* Status badge */}
-          {/* Status badge */}
+         
 <span
   onClick={async (e) => {
     e.stopPropagation(); // prevent card click
