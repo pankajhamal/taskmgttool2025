@@ -9,7 +9,7 @@ const MyTasks = () => {
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  const username = localStorage.getItem("username"); // logged-in user
+  const username = localStorage.getItem("username");
 
   // Fetch tasks from backend
   useEffect(() => {
@@ -35,8 +35,6 @@ const MyTasks = () => {
   };
 
   // Callback to update a task's status in state
-
-
 const handleTaskUpdate = async (taskId, newStatus) => {
   try {
     // Users cannot revert completed → pending
@@ -60,7 +58,7 @@ const handleTaskUpdate = async (taskId, newStatus) => {
 };
 
 
-  // ---------------- Download Report ----------------
+  //------------- Download Report ----------------
   const handleDownloadReport = () => {
     if (tasks.length === 0) {
       alert("No tasks available to export!");
