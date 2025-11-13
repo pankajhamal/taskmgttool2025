@@ -70,11 +70,16 @@ const ManageTasks = () => {
   };
 
   // Update task locally
-  const handleTaskUpdate = (taskId, updatedTask) => {
-    setTasks(prev =>
-      prev.map(t => (t.id === taskId ? { ...t, ...updatedTask } : t))
-    );
-  };
+ const handleTaskUpdate = (taskId, updatedData) => {
+  setTasks(prev =>
+    prev.map(t =>
+      t.id === taskId
+        ? { ...t, ...(typeof updatedData === "string" ? { status: updatedData } : updatedData) }
+        : t
+    )
+  );
+};
+
 
   // Delete task
   const handleDelete = async (taskId) => {

@@ -175,21 +175,34 @@ const TaskCard = ({ task, membersList = [], onTaskUpdate, onDelete }) => {
          
 <span
   onClick={async (e) => {
-    e.stopPropagation(); // prevent card click
-    if (role !== "user") return; // only users can toggle status
+    e.stopPropagation();
 
-    const newStatus = task.status === "pending" ? "completed" : "pending";
+    const role = localStorage.getItem("role");
+
+    let newStatus;
+
+    if (role === "user") {
+      // User can only mark pending → completed
+      if (task.status === "completed") {
+        alert("You cannot change a completed task back to pending.");
+        return;
+      }
+      newStatus = "completed";
+    } else if (role === "admin") {
+      // Admin can toggle freely
+      newStatus = task.status === "completed" ? "pending" : "completed";
+    }
 
     try {
-      // Call API
       await updateTaskStatus(task.id, newStatus);
 
-      // Notify parent to update its state
+      // Update local state
       if (onTaskUpdate) {
         onTaskUpdate(task.id, newStatus);
       }
     } catch (err) {
       console.error("Failed to update status:", err);
+      alert("Could not update task status. Try again.");
     }
   }}
   className={`mt-1 px-2 py-0.5 text-xs font-medium rounded-full cursor-pointer ${
@@ -200,6 +213,10 @@ const TaskCard = ({ task, membersList = [], onTaskUpdate, onDelete }) => {
 >
   {task.status === "completed" ? "Completed" : "Pending"}
 </span>
+
+
+
+
 
         </div>
       </div>

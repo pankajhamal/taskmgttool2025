@@ -35,11 +35,30 @@ const MyTasks = () => {
   };
 
   // Callback to update a task's status in state
-  const handleTaskUpdate = (taskId, newStatus) => {
+
+
+const handleTaskUpdate = async (taskId, newStatus) => {
+  try {
+    // Users cannot revert completed → pending
+    const task = tasks.find((t) => t.id === taskId);
+    if (task.status === "completed" && newStatus === "pending") {
+      alert("You cannot change a completed task back to pending.");
+      return;
+    }
+
+    // Call backend to update
+    await updateTaskStatus(taskId, newStatus);
+
+    // Update local state immediately
     setTasks((prev) =>
       prev.map((t) => (t.id === taskId ? { ...t, status: newStatus } : t))
     );
-  };
+  } catch (err) {
+    console.error("Failed to update status:", err);
+    alert("Failed to update task status.");
+  }
+};
+
 
   // ---------------- Download Report ----------------
   const handleDownloadReport = () => {
@@ -83,7 +102,7 @@ const MyTasks = () => {
 
     saveAs(blob, `User_Tasks_Report_${new Date().toISOString().slice(0, 10)}.xlsx`);
   };
-  // -------------------------------------------------
+
 
   if (loading) {
     return <p className="text-center mt-10 text-gray-600">Loading tasks...</p>;
